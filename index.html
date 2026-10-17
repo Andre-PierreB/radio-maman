@@ -282,7 +282,7 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
   var $ = function (id) { return document.getElementById(id); };
   var audio = $('audio');
   var DB_NAME = 'radio-maman', META = 'meta', DATA = 'audio';
-  var db = null, tracks = [], idx = 0, curUrl = null, wakeLock = null, pendingSeek = 0;
+  var apNote = false, db = null, tracks = [], idx = 0, curUrl = null, wakeLock = null, pendingSeek = 0;
 
   // ---------- Horloge ----------
   function tick() {
@@ -363,7 +363,7 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
     $('prev').disabled = $('nextMain').disabled = tracks.length < 2;
     var playing = !audio.paused;
     if (!has) { $('label').textContent = 'Rien à écouter pour le moment'; $('title').textContent = ''; }
-    else { $('label').textContent = playing ? 'En écoute' : 'Appuyez pour écouter'; $('title').textContent = pretty(tracks[idx].name); }
+    else { $('label').textContent = playing ? 'En écoute' : (apNote ? 'André-Pierre a ajouté un nouvel élément' : 'Appuyez pour écouter'); $('title').textContent = pretty(tracks[idx].name); }
     document.body.classList.toggle('playing', playing);
     $('icoPlay').hidden = playing; $('icoPause').hidden = !playing;
     $('play').setAttribute('aria-label', playing ? 'Pause' : 'Écouter');
@@ -644,6 +644,8 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
   document.addEventListener('touchstart', function () {}, { passive: true });
 
   // ---------- Dossier AP : messages de la famille, téléchargés automatiquement ----------
+  function showApNote() { apNote = true; if (audio.paused) $('label').textContent = 'André-Pierre a ajouté un nouvel élément'; }
+  audio.addEventListener('play', function () { apNote = false; });
   var AP_API = 'https://api.github.com/repos/Andre-PierreB/radio-maman/contents/AP';
   var apBusy = false;
   async function checkAP() {
@@ -672,6 +674,7 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
         await saveAudio({ name: f.name, size: data.size || data.byteLength || 0, order: ord, src: 'AP/' + f.name, ap: true }, data, type);
       }
       await afterChange(cur);
+      showApNote();
     } catch (e) { /* hors ligne : on réessaiera plus tard */ }
     finally { apBusy = false; }
   }
