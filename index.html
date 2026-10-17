@@ -672,7 +672,6 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
         await saveAudio({ name: f.name, size: data.size || data.byteLength || 0, order: ord, src: 'AP/' + f.name, ap: true }, data, type);
       }
       await afterChange(cur);
-      var lab = $('label'); if (audio.paused && lab) lab.textContent = 'Nouveau message de la famille !';
     } catch (e) { /* hors ligne : on réessaiera plus tard */ }
     finally { apBusy = false; }
   }
