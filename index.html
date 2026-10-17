@@ -160,6 +160,20 @@ body.playing #play.pressed, body.playing #play:active { background: #ad7d44; }
 #seek::-webkit-slider-thumb { background: #d9c3a0; }
 .hello { opacity: 0; -webkit-transition: opacity .8s ease; transition: opacity .8s ease; }
 .hello.show { opacity: 1; }
+
+/* v6 : contraste nettement réduit partout */
+:root { --bg: #221c16; --bg-2: #2a231c; --fg: #c8b596; --muted: #8f7e66; --line: #3d3329; --btn: #b98a52; }
+body { background: #221c16; }
+.clock .time { color: #c2ad8c; }
+.now .title { color: #c2ad8c; }
+.hello { color: #b98a52; }
+#play { background: #b88550; color: #5a3d22; box-shadow: 0 0 0 1.6vmin rgba(184,133,80,.14); }
+#play.pressed, #play:active { background: #c4925e; }
+body.playing #play { background: #7e5c37; color: #c9ad84; box-shadow: 0 0 0 1.6vmin rgba(126,92,55,.25), 0 0 0 4vmin rgba(184,133,80,.07); }
+body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
+.side, .ctl { color: #b3a083; border-color: #3d3329; }
+#seek::-webkit-slider-thumb { background: #a8916f; box-shadow: 0 0 0 .8vmin rgba(184,133,80,.25); }
+.meter i.on { background: #a87c49; }
 </style>
 </head>
 <body>
