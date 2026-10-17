@@ -102,6 +102,23 @@ ol.tracks li.cur { color: var(--btn); font-weight: 700; }
 .hint { font-size: 15px; }
 #msg:empty { display: none; }
 #msg { color: var(--btn); font-weight: 700; }
+.box { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.box > * { margin: 0 0 14px; }
+.box h3 { font-size: 22px; margin-bottom: 8px; }
+select.pbtn { -webkit-appearance: menulist; max-width: 100%; }
+.field { width: 100%; font-size: 18px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.note { color: var(--btn); font-weight: 700; }
+.note:empty { display: none; }
+.episodes { max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.episodes:empty { display: none; }
+.ep { display: -webkit-flex; display: flex; -webkit-align-items: flex-start; align-items: flex-start; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.ep input { width: 26px; height: 26px; margin: 2px 14px 0 0; -webkit-flex: none; flex: none; }
+.ep .t { -webkit-flex: 1; flex: 1; min-width: 0; word-wrap: break-word; }
+.ep .d { color: var(--muted); font-size: 15px; display: block; margin-top: 2px; }
+.ep.have .t { color: var(--muted); }
+ol.tracks li { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+ol.tracks li span { -webkit-flex: 1; flex: 1; min-width: 0; }
+.rm { font-size: 15px; padding: 6px 10px; margin-left: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); }
 </style>
 </head>
 <body>
@@ -149,26 +166,48 @@ ol.tracks li.cur { color: var(--btn); font-weight: 700; }
 <div class="panel" id="panel" hidden>
   <div class="panel-inner">
     <h2>Réglages</h2>
-    <p>Ajoutez des fichiers audio (MP3, M4A) depuis l'app Fichiers. Ils restent sur l'iPad et se lisent hors ligne, dans l'ordre alphabétique des noms de fichiers. Arrivée à la fin, la lecture reprend au début.</p>
-    <div class="row">
-      <label class="pbtn primary" for="files">Ajouter des fichiers</label>
-      <input id="files" type="file" accept="audio/*,.mp3,.m4a,.aac" multiple hidden>
-      <button class="pbtn" id="restart" type="button">Revenir au premier</button>
-      <button class="pbtn" id="next" type="button">Passer au suivant</button>
-    </div>
-    <div id="msg" role="status"></div>
-    <div class="stats" id="stats">Chargement…</div>
-    <ol class="tracks" id="list"></ol>
-    <div class="row">
-      <button class="pbtn danger" id="clear" type="button">Tout supprimer</button>
-      <button class="pbtn primary" id="close" type="button">Fermer</button>
-    </div>
-    <div class="confirm" id="confirm" hidden>
-      <p style="color:var(--fg)">Supprimer tous les fichiers de l'iPad ? Il faudra les réimporter.</p>
+
+    <section class="box">
+      <h3>Ajouter depuis une émission</h3>
+      <p>Choisissez une émission, cochez les épisodes, puis téléchargez-les. Ils restent sur l'iPad et s'écoutent sans internet.</p>
       <div class="row">
-        <button class="pbtn danger" id="clearYes" type="button">Oui, tout supprimer</button>
-        <button class="pbtn" id="clearNo" type="button">Annuler</button>
+        <select id="feedSel" class="pbtn">
+          <option value="https://radiofrance-podcast.net/podcast09/rss_14435.xml">Le Fil de l'histoire (France Inter)</option>
+          <option value="https://radiofrance-podcast.net/podcast09/rss_10076.xml">Le Cours de l'histoire (France Culture)</option>
+          <option value="autre">Autre émission (adresse du flux)…</option>
+        </select>
+        <button class="pbtn primary" id="loadFeed" type="button">Voir les épisodes</button>
       </div>
+      <input id="feedUrl" class="field" type="url" placeholder="Coller l'adresse du flux RSS" hidden>
+      <div id="feedMsg" class="note" role="status"></div>
+      <div id="episodes" class="episodes"></div>
+      <div class="row" id="dlRow" hidden>
+        <button class="pbtn primary" id="dlSel" type="button">Télécharger les épisodes cochés</button>
+      </div>
+    </section>
+
+    <section class="box">
+      <h3>À écouter sur l'iPad</h3>
+      <div class="stats" id="stats">Chargement…</div>
+      <ol class="tracks" id="list"></ol>
+      <div class="row">
+        <label class="pbtn" for="files">Ajouter des fichiers de l'iPad</label>
+        <input id="files" type="file" accept="audio/*,.mp3,.m4a,.aac" multiple hidden>
+        <button class="pbtn" id="restart" type="button">Revenir au premier</button>
+        <button class="pbtn danger" id="clear" type="button">Tout supprimer</button>
+      </div>
+      <div id="msg" role="status"></div>
+      <div class="confirm" id="confirm" hidden>
+        <p style="color:var(--fg)">Supprimer tous les épisodes de l'iPad ?</p>
+        <div class="row">
+          <button class="pbtn danger" id="clearYes" type="button">Oui, tout supprimer</button>
+          <button class="pbtn" id="clearNo" type="button">Annuler</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="row">
+      <button class="pbtn primary" id="close" type="button">Fermer les réglages</button>
     </div>
     <p class="hint">Pour revenir ici : garder le doigt appuyé 3 secondes sur l'heure.</p>
   </div>
@@ -177,89 +216,111 @@ ol.tracks li.cur { color: var(--btn); font-weight: 700; }
 <audio id="audio" preload="auto"></audio>
 
 <script>
-(() => {
-  const $ = id => document.getElementById(id);
-  const audio = $('audio');
-  const DB = 'ecoute', STORE = 'tracks';
-  let db = null, tracks = [], idx = 0, curUrl = null, wakeLock = null, pendingSeek = 0;
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var audio = $('audio');
+  var DB_NAME = 'radio-maman', META = 'meta', DATA = 'audio';
+  var db = null, tracks = [], idx = 0, curUrl = null, wakeLock = null, pendingSeek = 0;
 
   // ---------- Horloge ----------
   function tick() {
-    const d = new Date();
+    var d = new Date();
     $('time').textContent = d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
     $('date').textContent = d.toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' });
   }
   tick(); setInterval(tick, 10000);
 
-  // ---------- Stockage ----------
+  // ---------- Stockage : métadonnées et sons séparés ----------
   function openDB() {
-    return new Promise((res, rej) => {
-      const r = indexedDB.open(DB, 1);
-      r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
+    return new Promise(function (res, rej) {
+      var r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = function () {
+        var d = r.result;
+        if (!d.objectStoreNames.contains(META)) d.createObjectStore(META, { keyPath: 'id', autoIncrement: true });
+        if (!d.objectStoreNames.contains(DATA)) d.createObjectStore(DATA);
+      };
+      r.onsuccess = function () { res(r.result); };
+      r.onerror = function () { rej(r.error); };
     });
   }
-  function tx(mode, fn) {
-    return new Promise((res, rej) => {
-      const t = db.transaction(STORE, mode); const s = t.objectStore(STORE);
-      const out = fn(s); t.oncomplete = () => res(out && out.result !== undefined ? out.result : out); t.onerror = () => rej(t.error);
-    });
+  function req(r) { return new Promise(function (res, rej) { r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; }); }
+  function done(t) { return new Promise(function (res, rej) { t.oncomplete = function () { res(); }; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error || new Error('abort')); }; }); }
+
+  async function addTrack(meta, payload) {
+    // payload : { blob } ou { buf, type }
+    var t = db.transaction([META, DATA], 'readwrite');
+    var p = done(t);
+    var r = t.objectStore(META).add(meta);
+    r.onsuccess = function () { t.objectStore(DATA).put(payload, r.result); };
+    await p;
+  }
+  async function saveAudio(meta, blobOrBuf, type) {
+    if (blobOrBuf instanceof Blob) {
+      try { await addTrack(meta, { blob: blobOrBuf }); return; } catch (e) { /* vieux Safari : on passe aux octets */ }
+      blobOrBuf = await readBuf(blobOrBuf);
+    }
+    await addTrack(meta, { buf: blobOrBuf, type: type || 'audio/mpeg' });
   }
   async function loadMeta() {
-    // Ne lit que les noms (les blobs sont lus à la demande)
-    const all = await new Promise((res, rej) => {
-      const out = []; const t = db.transaction(STORE, 'readonly');
-      const c = t.objectStore(STORE).openCursor();
-      c.onsuccess = () => { const cur = c.result; if (cur) { out.push({ id: cur.value.id, name: cur.value.name, size: cur.value.size || 0 }); cur.continue(); } else res(out); };
-      c.onerror = () => rej(c.error);
-    });
-    all.sort((a, b) => a.name.localeCompare(b.name, 'fr', { numeric: true }));
+    var all = await req(db.transaction(META, 'readonly').objectStore(META).getAll());
+    all.sort(function (a, b) { return (a.order || a.id) - (b.order || b.id); });
     tracks = all;
   }
-  function getBlob(id) {
-    return new Promise((res, rej) => {
-      const r = db.transaction(STORE, 'readonly').objectStore(STORE).get(id);
-      r.onsuccess = () => { const v = r.result; res(!v ? null : v.blob ? v.blob : v.buf ? new Blob([v.buf], { type: v.type || 'audio/mpeg' }) : null); }; r.onerror = () => rej(r.error);
-    });
+  async function getBlob(id) {
+    var v = await req(db.transaction(DATA, 'readonly').objectStore(DATA).get(id));
+    if (!v) return null;
+    if (v.blob) return v.blob;
+    if (v.buf) return new Blob([v.buf], { type: v.type || 'audio/mpeg' });
+    return null;
+  }
+  async function removeTrack(id) {
+    var t = db.transaction([META, DATA], 'readwrite'); var p = done(t);
+    t.objectStore(META).delete(id); t.objectStore(DATA).delete(id);
+    await p;
+  }
+  async function clearAll() {
+    var t = db.transaction([META, DATA], 'readwrite'); var p = done(t);
+    t.objectStore(META).clear(); t.objectStore(DATA).clear();
+    await p;
   }
   function readBuf(file) {
-    return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsArrayBuffer(file); });
+    return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = function () { rej(fr.error); }; fr.readAsArrayBuffer(file); });
   }
   function saveState() {
-    try { localStorage.setItem('ecoute-state', JSON.stringify({ id: tracks[idx] && tracks[idx].id, t: audio.currentTime || pendingSeek || 0 })); } catch (e) {}
+    try { localStorage.setItem('radio-state', JSON.stringify({ id: tracks[idx] ? tracks[idx].id : null, t: audio.currentTime || pendingSeek || 0 })); } catch (e) {}
   }
   function readState() {
-    try { return JSON.parse(localStorage.getItem('ecoute-state') || 'null'); } catch (e) { return null; }
+    try { return JSON.parse(localStorage.getItem('radio-state') || 'null'); } catch (e) { return null; }
   }
 
   // ---------- Affichage ----------
-  const pretty = n => n.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  function pretty(n) { return String(n).replace(/\.(mp3|m4a|aac|wav)$/i, '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim(); }
   function render() {
-    const has = tracks.length > 0;
+    var has = tracks.length > 0;
     $('play').disabled = !has;
     $('prev').disabled = $('nextMain').disabled = tracks.length < 2;
-    if (!has) {
-      $('label').textContent = 'Rien à écouter pour le moment';
-      $('title').textContent = '';
-    } else {
-      $('label').textContent = audio.paused ? 'Appuyez pour écouter' : 'En écoute';
-      $('title').textContent = pretty(tracks[idx].name);
-    }
-    const playing = !audio.paused;
+    var playing = !audio.paused;
+    if (!has) { $('label').textContent = 'Rien à écouter pour le moment'; $('title').textContent = ''; }
+    else { $('label').textContent = playing ? 'En écoute' : 'Appuyez pour écouter'; $('title').textContent = pretty(tracks[idx].name); }
     document.body.classList.toggle('playing', playing);
     $('icoPlay').hidden = playing; $('icoPause').hidden = !playing;
     $('play').setAttribute('aria-label', playing ? 'Pause' : 'Écouter');
   }
+  function fmtMo(b) { return Math.round(b / 1048576) + ' Mo'; }
   function renderPanel() {
-    const mb = tracks.reduce((s, t) => s + t.size, 0) / 1048576;
-    $('stats').textContent = tracks.length ? `${tracks.length} fichier${tracks.length > 1 ? 's' : ''} · ${mb.toFixed(0)} Mo` : 'Aucun fichier pour le moment.';
-    const ol = $('list'); ol.innerHTML = '';
-    tracks.forEach((t, i) => { const li = document.createElement('li'); li.textContent = pretty(t.name); if (i === idx) li.className = 'cur'; ol.appendChild(li); });
+    var total = tracks.reduce(function (s, t) { return s + (t.size || 0); }, 0);
+    $('stats').textContent = tracks.length ? tracks.length + ' épisode' + (tracks.length > 1 ? 's' : '') + ' · ' + fmtMo(total) : 'Aucun épisode pour le moment.';
+    var ol = $('list'); ol.innerHTML = '';
+    tracks.forEach(function (t, i) {
+      var li = document.createElement('li'); if (i === idx) li.className = 'cur';
+      var sp = document.createElement('span'); sp.textContent = pretty(t.name); li.appendChild(sp);
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'rm'; b.textContent = 'Retirer';
+      b.addEventListener('click', function () { removeOne(t.id); });
+      li.appendChild(b); ol.appendChild(li);
+    });
     if (navigator.storage && navigator.storage.estimate) {
-      navigator.storage.estimate().then(e => {
-        if (e && e.quota) $('stats').textContent += ` · place disponible ≈ ${(e.quota / 1073741824).toFixed(1)} Go`;
-      }).catch(() => {});
+      navigator.storage.estimate().then(function (e) { if (e && e.quota) $('stats').textContent += ' · place ≈ ' + (e.quota / 1073741824).toFixed(1) + ' Go'; }).catch(function () {});
     }
   }
 
@@ -267,159 +328,239 @@ ol.tracks li.cur { color: var(--btn); font-weight: 700; }
   async function loadTrack(i, seek) {
     if (!tracks.length) return false;
     idx = ((i % tracks.length) + tracks.length) % tracks.length;
-    const blob = await getBlob(tracks[idx].id);
+    var blob = await getBlob(tracks[idx].id);
     if (!blob) return false;
     if (curUrl) URL.revokeObjectURL(curUrl);
     curUrl = URL.createObjectURL(blob);
     pendingSeek = seek || 0;
     audio.src = curUrl;
-    setMediaSession();
-    render(); saveState();
+    setMediaSession(); render(); saveState();
     return true;
   }
-  audio.addEventListener('loadedmetadata', () => {
+  audio.addEventListener('loadedmetadata', function () {
     if (pendingSeek && pendingSeek < audio.duration - 5) { try { audio.currentTime = pendingSeek; } catch (e) {} }
     pendingSeek = 0;
   });
   async function play() {
-    if (!audio.src) { const st = readState(); const i = st ? Math.max(0, tracks.findIndex(t => t.id === st.id)) : 0; await loadTrack(i, st && tracks[i] && tracks[i].id === st.id ? st.t : 0); }
+    if (!audio.src || audio.src === location.href) {
+      var st = readState(); var i = 0, t = 0;
+      if (st) { var f = tracks.findIndex(function (x) { return x.id === st.id; }); if (f >= 0) { i = f; t = st.t; } }
+      await loadTrack(i, t);
+    }
     try { await audio.play(); } catch (e) { $('label').textContent = 'Appuyez encore une fois'; }
   }
   function pause() { audio.pause(); }
-  $('play').addEventListener('click', () => audio.paused ? play() : pause());
+  $('play').addEventListener('click', function () { ensureAudioGraph(); if (audio.paused) play(); else pause(); });
+  async function go(step) {
+    if (!tracks.length) return;
+    var was = !audio.paused;
+    await loadTrack(idx + step, 0);
+    if (was) audio.play().catch(function () {});
+  }
+  $('prev').addEventListener('click', function () { go(-1); });
+  $('nextMain').addEventListener('click', function () { go(1); });
 
-  audio.addEventListener('play', () => { render(); keepAwake(true); });
-  audio.addEventListener('pause', () => { render(); saveState(); keepAwake(false); });
-  audio.addEventListener('ended', async () => { await loadTrack(idx + 1, 0); audio.play().catch(() => {}); });
-  audio.addEventListener('error', async () => { if (tracks.length > 1) { await loadTrack(idx + 1, 0); audio.play().catch(() => {}); } });
-  let last = 0;
-  audio.addEventListener('timeupdate', () => {
+  audio.addEventListener('play', function () { render(); keepAwake(true); });
+  audio.addEventListener('pause', function () { render(); saveState(); keepAwake(false); });
+  audio.addEventListener('ended', async function () { await loadTrack(idx + 1, 0); audio.play().catch(function () {}); });
+  var last = 0;
+  audio.addEventListener('timeupdate', function () {
     if (audio.duration) $('prog').style.width = (100 * audio.currentTime / audio.duration) + '%';
-    const now = Date.now(); if (now - last > 5000) { last = now; saveState(); }
+    var now = Date.now(); if (now - last > 5000) { last = now; saveState(); }
   });
   window.addEventListener('pagehide', saveState);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) saveState(); else if (!audio.paused) keepAwake(true); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) saveState(); else if (!audio.paused) keepAwake(true); });
 
-  // Écran allumé pendant l'écoute
   async function keepAwake(on) {
     try {
-      if (on && 'wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+      if (on && 'wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', function () { wakeLock = null; }); }
       if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
     } catch (e) { wakeLock = null; }
   }
-
-  // Écouteurs / bouton Bluetooth / écran verrouillé
   function setMediaSession() {
     if (!('mediaSession' in navigator) || !tracks[idx]) return;
     try {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: pretty(tracks[idx].name), artist: 'Écoute' });
+      navigator.mediaSession.metadata = new MediaMetadata({ title: pretty(tracks[idx].name), artist: 'Radio Maman' });
       navigator.mediaSession.setActionHandler('play', play);
       navigator.mediaSession.setActionHandler('pause', pause);
-      navigator.mediaSession.setActionHandler('nexttrack', async () => { await loadTrack(idx + 1, 0); audio.play().catch(() => {}); });
-      navigator.mediaSession.setActionHandler('previoustrack', () => go(-1));
+      navigator.mediaSession.setActionHandler('nexttrack', function () { go(1); });
+      navigator.mediaSession.setActionHandler('previoustrack', function () { go(-1); });
     } catch (e) {}
   }
 
-  // ---------- Réglages (appui long 3 s sur l'heure) ----------
-  let pressTimer = null;
-  const clock = $('clock');
-  clock.addEventListener('pointerdown', () => { pressTimer = setTimeout(openPanel, 3000); });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => clock.addEventListener(ev, () => clearTimeout(pressTimer)));
-  clock.addEventListener('contextmenu', e => e.preventDefault());
-  function openPanel() { $('confirm').hidden = true; $('msg').textContent = ''; renderPanel(); $('panel').hidden = false; }
-  $('close').addEventListener('click', () => { $('panel').hidden = true; render(); });
-
-  $('files').addEventListener('change', async e => {
-    const files = Array.prototype.slice.call(e.target.files); e.target.value = '';
-    if (!files.length) return;
-    let ok = 0;
-    for (let i = 0; i < files.length; i++) {
-      $('msg').textContent = `Import ${i + 1} / ${files.length}…`;
-      const f = files[i];
-      try { await tx('readwrite', s => s.add({ name: f.name, size: f.size, blob: f })); ok++; continue; } catch (err) {}
-      // Vieux Safari : stocke les octets bruts si le fichier lui-même est refusé
-      try { const buf = await readBuf(f); await tx('readwrite', s => s.add({ name: f.name, size: f.size, buf: buf, type: f.type || 'audio/mpeg' })); ok++; }
-      catch (err) { $('msg').textContent = `Arrêt : impossible d'enregistrer « ${f.name} » (place insuffisante ?).`; break; }
-    }
-    const curId = tracks[idx] && tracks[idx].id;
-    await loadMeta();
-    if (curId) idx = Math.max(0, tracks.findIndex(t => t.id === curId));
-    if (ok === files.length) $('msg').textContent = `${ok} fichier${ok > 1 ? 's' : ''} ajouté${ok > 1 ? 's' : ''}.`;
-    renderPanel(); render();
-  });
-  $('restart').addEventListener('click', async () => { const was = !audio.paused; await loadTrack(0, 0); if (was) audio.play().catch(() => {}); renderPanel(); });
-  $('next').addEventListener('click', async () => { const was = !audio.paused; await loadTrack(idx + 1, 0); if (was) audio.play().catch(() => {}); renderPanel(); });
-  $('clear').addEventListener('click', () => { $('confirm').hidden = false; });
-  $('clearNo').addEventListener('click', () => { $('confirm').hidden = true; });
-  $('clearYes').addEventListener('click', async () => {
-    audio.pause(); audio.removeAttribute('src'); audio.load();
-    await tx('readwrite', s => s.clear());
-    try { localStorage.removeItem('ecoute-state'); } catch (e) {}
-    tracks = []; idx = 0; $('confirm').hidden = true; $('msg').textContent = 'Tout est supprimé.';
-    renderPanel(); render();
-  });
-
-  // ---------- Précédent / suivant ----------
-  async function go(step) {
-    if (!tracks.length) return;
-    const was = !audio.paused;
-    await loadTrack(idx + step, 0);
-    if (was) audio.play().catch(() => {});
-  }
-  $('prev').addEventListener('click', () => go(-1));
-  $('nextMain').addEventListener('click', () => go(1));
-
-  // ---------- Volume (iPad : passe par Web Audio, audio.volume y est bloqué) ----------
-  const VOL_MAX = 10, DIM_MAX = 6;
-  const settings = (() => { try { return JSON.parse(localStorage.getItem('ecoute-reglages') || '{}'); } catch (e) { return {}; } })();
-  let vol = Number.isFinite(settings.vol) ? settings.vol : 7;
-  let lum = Number.isFinite(settings.lum) ? settings.lum : DIM_MAX;
-  let actx = null, gain = null;
+  // ---------- Volume et clarté ----------
+  var VOL_MAX = 10, DIM_MAX = 6;
+  var settings = (function () { try { return JSON.parse(localStorage.getItem('radio-reglages') || '{}'); } catch (e) { return {}; } })();
+  var vol = typeof settings.vol === 'number' ? settings.vol : 7;
+  var lum = typeof settings.lum === 'number' ? settings.lum : DIM_MAX;
+  var actx = null, gain = null;
   function ensureAudioGraph() {
-    if (actx) { if (actx.state !== 'running') actx.resume().catch(() => {}); return; }
-    const AC = window.AudioContext || window.webkitAudioContext;
+    if (actx) { if (actx.state !== 'running') actx.resume().catch(function () {}); return; }
+    var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     try {
       actx = new AC();
-      const src = actx.createMediaElementSource(audio);
+      var src = actx.createMediaElementSource(audio);
       gain = actx.createGain();
       src.connect(gain); gain.connect(actx.destination);
       applyVol();
-      actx.resume().catch(() => {});
+      if (actx.resume) actx.resume().catch(function () {});
     } catch (e) { actx = null; gain = null; }
   }
-  function applyVol() {
-    const v = vol / VOL_MAX;
-    if (gain) gain.gain.value = v * v; else { try { audio.volume = v; } catch (e) {} }
-  }
-  function saveSettings() { try { localStorage.setItem('ecoute-reglages', JSON.stringify({ vol, lum })); } catch (e) {} }
-  function meter(el, n, max) { el.innerHTML = ''; for (let i = 1; i <= max; i++) { const b = document.createElement('i'); b.style.height = (30 + i * (70 / max)) + '%'; if (i <= n) b.className = 'on'; el.appendChild(b); } }
+  function applyVol() { var v = vol / VOL_MAX; if (gain) gain.gain.value = v * v; else { try { audio.volume = v; } catch (e) {} } }
+  function saveSettings() { try { localStorage.setItem('radio-reglages', JSON.stringify({ vol: vol, lum: lum })); } catch (e) {} }
+  function meter(el, n, max) { el.innerHTML = ''; for (var i = 1; i <= max; i++) { var b = document.createElement('i'); b.style.height = (30 + i * (70 / max)) + '%'; if (i <= n) b.className = 'on'; el.appendChild(b); } }
   function applyLum() { $('dim').style.opacity = String((DIM_MAX - lum) * 0.14); }
   function renderCtl() {
     meter($('volMeter'), vol, VOL_MAX); meter($('dimMeter'), lum, DIM_MAX);
     $('volDown').disabled = vol <= 0; $('volUp').disabled = vol >= VOL_MAX;
     $('dimDown').disabled = lum <= 1; $('dimUp').disabled = lum >= DIM_MAX;
   }
-  $('volDown').addEventListener('click', () => { ensureAudioGraph(); vol = Math.max(0, vol - 1); applyVol(); renderCtl(); saveSettings(); });
-  $('volUp').addEventListener('click', () => { ensureAudioGraph(); vol = Math.min(VOL_MAX, vol + 1); applyVol(); renderCtl(); saveSettings(); });
-  $('dimDown').addEventListener('click', () => { lum = Math.max(1, lum - 1); applyLum(); renderCtl(); saveSettings(); });
-  $('dimUp').addEventListener('click', () => { lum = Math.min(DIM_MAX, lum + 1); applyLum(); renderCtl(); saveSettings(); });
-  $('play').addEventListener('click', ensureAudioGraph, true);
+  $('volDown').addEventListener('click', function () { ensureAudioGraph(); vol = Math.max(0, vol - 1); applyVol(); renderCtl(); saveSettings(); });
+  $('volUp').addEventListener('click', function () { ensureAudioGraph(); vol = Math.min(VOL_MAX, vol + 1); applyVol(); renderCtl(); saveSettings(); });
+  $('dimDown').addEventListener('click', function () { lum = Math.max(1, lum - 1); applyLum(); renderCtl(); saveSettings(); });
+  $('dimUp').addEventListener('click', function () { lum = Math.min(DIM_MAX, lum + 1); applyLum(); renderCtl(); saveSettings(); });
   applyVol(); applyLum(); renderCtl();
 
-  // ---------- Démarrage ----------
-  (async () => {
+  // ---------- Réglages (appui long 3 s sur l'heure) ----------
+  var pressTimer = null, clock = $('clock');
+  function startPress(e) { clearTimeout(pressTimer); pressTimer = setTimeout(openPanel, 3000); }
+  function endPress() { clearTimeout(pressTimer); }
+  clock.addEventListener('touchstart', startPress, { passive: true });
+  clock.addEventListener('mousedown', startPress);
+  ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(function (ev) { clock.addEventListener(ev, endPress); });
+  clock.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  function openPanel() { $('confirm').hidden = true; $('msg').textContent = ''; renderPanel(); markHave(); $('panel').hidden = false; }
+  $('close').addEventListener('click', function () { $('panel').hidden = true; render(); });
+
+  async function afterChange(keepId) {
+    await loadMeta();
+    if (keepId != null) { var f = tracks.findIndex(function (t) { return t.id === keepId; }); idx = f >= 0 ? f : Math.min(idx, Math.max(0, tracks.length - 1)); }
+    renderPanel(); render(); markHave();
+  }
+  async function removeOne(id) {
+    var cur = tracks[idx] ? tracks[idx].id : null;
+    if (id === cur) { audio.pause(); audio.removeAttribute('src'); try { audio.load(); } catch (e) {} }
+    await removeTrack(id);
+    await afterChange(id === cur ? null : cur);
+  }
+
+  $('files').addEventListener('change', async function (e) {
+    var files = Array.prototype.slice.call(e.target.files); e.target.value = '';
+    if (!files.length) return;
+    files.sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); });
+    var cur = tracks[idx] ? tracks[idx].id : null, ok = 0, base = Date.now();
+    for (var i = 0; i < files.length; i++) {
+      $('msg').textContent = 'Import ' + (i + 1) + ' / ' + files.length + '…';
+      try { await saveAudio({ name: files[i].name, size: files[i].size, order: base + i }, files[i], files[i].type); ok++; }
+      catch (err) { $('msg').textContent = 'Arrêt : impossible d\'enregistrer « ' + files[i].name + ' » (place insuffisante ?).'; break; }
+    }
+    if (ok === files.length) $('msg').textContent = ok + ' fichier' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '.';
+    await afterChange(cur);
+  });
+  $('restart').addEventListener('click', async function () { var was = !audio.paused; await loadTrack(0, 0); if (was) audio.play().catch(function () {}); renderPanel(); });
+  $('clear').addEventListener('click', function () { $('confirm').hidden = false; });
+  $('clearNo').addEventListener('click', function () { $('confirm').hidden = true; });
+  $('clearYes').addEventListener('click', async function () {
+    audio.pause(); audio.removeAttribute('src'); try { audio.load(); } catch (e) {}
+    await clearAll();
+    try { localStorage.removeItem('radio-state'); } catch (e) {}
+    idx = 0; $('confirm').hidden = true; $('msg').textContent = 'Tout est supprimé.';
+    await afterChange(null);
+  });
+
+  // ---------- Catalogue d'émissions (flux RSS) ----------
+  var episodes = [];
+  $('feedSel').addEventListener('change', function () { $('feedUrl').hidden = $('feedSel').value !== 'autre'; });
+  function directUrl(u) {
+    // Les liens Radio France passent par un redirecteur sans autorisation ; on va directement au fichier.
+    var m = /^https?:\/\/proxycast\.radiofrance\.fr\/.*\/([^\/?#]+\.(mp3|m4a))/i.exec(u);
+    return m ? 'https://media.radiofrance-podcast.net/podcast09/' + m[1] : u;
+  }
+  function textOf(el, tag) { var x = el.getElementsByTagName(tag)[0]; return x ? x.textContent.trim() : ''; }
+  function shortDur(d) {
+    if (!d) return '';
+    var p = d.split(':').map(Number), s = 0; p.forEach(function (n) { s = s * 60 + (n || 0); });
+    var m = Math.round(s / 60); return m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60 < 10 ? '0' : '') + (m % 60) : m + ' min';
+  }
+  function markHave() {
+    var have = {}; tracks.forEach(function (t) { if (t.src) have[t.src] = true; });
+    Array.prototype.forEach.call(document.querySelectorAll('.ep'), function (row) {
+      var on = !!have[row.getAttribute('data-src')];
+      row.classList.toggle('have', on);
+      var d = row.querySelector('.d'); d.textContent = row.getAttribute('data-dur') + (on ? ' · déjà sur l\'iPad' : '');
+    });
+  }
+  $('loadFeed').addEventListener('click', async function () {
+    var url = $('feedSel').value === 'autre' ? $('feedUrl').value.trim() : $('feedSel').value;
+    if (!url) { $('feedMsg').textContent = 'Collez d\'abord l\'adresse du flux.'; return; }
+    $('feedMsg').textContent = 'Chargement de la liste…'; $('episodes').innerHTML = ''; $('dlRow').hidden = true;
     try {
-      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+      var r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var xml = new DOMParser().parseFromString(await r.text(), 'text/xml');
+      var items = Array.prototype.slice.call(xml.getElementsByTagName('item'));
+      episodes = items.map(function (it) {
+        var enc = it.getElementsByTagName('enclosure')[0];
+        return { title: textOf(it, 'title'), src: enc ? enc.getAttribute('url') : '', dur: shortDur(textOf(it, 'itunes:duration')) };
+      }).filter(function (e) { return e.src && !/^Retrouvez|^Découvrez/i.test(e.title); });
+      if (!episodes.length) throw new Error('vide');
+      var box = $('episodes');
+      episodes.forEach(function (ep, i) {
+        var lab = document.createElement('label'); lab.className = 'ep';
+        lab.setAttribute('data-src', directUrl(ep.src)); lab.setAttribute('data-dur', ep.dur);
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = String(i);
+        var t = document.createElement('span'); t.className = 't'; t.textContent = ep.title;
+        var d = document.createElement('span'); d.className = 'd'; t.appendChild(d);
+        lab.appendChild(cb); lab.appendChild(t); box.appendChild(lab);
+      });
+      markHave();
+      $('feedMsg').textContent = episodes.length + ' épisodes. Cochez ceux à garder.';
+      $('dlRow').hidden = false;
+    } catch (e) {
+      $('feedMsg').textContent = 'Impossible de charger cette émission. Vérifiez la connexion internet ou l\'adresse.';
+    }
+  });
+  $('dlSel').addEventListener('click', async function () {
+    var picks = Array.prototype.slice.call(document.querySelectorAll('.ep input:checked')).map(function (c) { return episodes[Number(c.value)]; });
+    if (!picks.length) { $('feedMsg').textContent = 'Cochez au moins un épisode.'; return; }
+    $('dlSel').disabled = true;
+    var cur = tracks[idx] ? tracks[idx].id : null, ok = 0, base = Date.now();
+    for (var i = 0; i < picks.length; i++) {
+      var ep = picks[i], url = directUrl(ep.src);
+      $('feedMsg').textContent = 'Téléchargement ' + (i + 1) + ' / ' + picks.length + ' : ' + ep.title + '… (ne fermez pas)';
+      try {
+        var r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var type = r.headers.get('content-type') || (/\.m4a/i.test(url) ? 'audio/mp4' : 'audio/mpeg');
+        var data;
+        try { data = await r.blob(); } catch (e2) { data = await r.arrayBuffer(); }
+        var size = data.size || data.byteLength || 0;
+        await saveAudio({ name: ep.title, size: size, order: base + i, src: url }, data, type);
+        ok++;
+      } catch (e) {
+        $('feedMsg').textContent = 'Arrêt sur « ' + ep.title + ' » : téléchargement ou enregistrement impossible (place insuffisante ?). ' + ok + ' épisode(s) ajouté(s).';
+        break;
+      }
+    }
+    if (ok === picks.length) $('feedMsg').textContent = ok + ' épisode' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '. Ils sont à la fin de la liste.';
+    Array.prototype.forEach.call(document.querySelectorAll('.ep input:checked'), function (c) { c.checked = false; });
+    $('dlSel').disabled = false;
+    await afterChange(cur);
+  });
+
+  // ---------- Démarrage ----------
+  (async function () {
+    try {
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
       db = await openDB();
       await loadMeta();
-      const st = readState();
-      if (st) { const i = tracks.findIndex(t => t.id === st.id); if (i >= 0) idx = i; }
+      var st = readState();
+      if (st) { var i = tracks.findIndex(function (t) { return t.id === st.id; }); if (i >= 0) idx = i; }
     } catch (e) {
       $('label').textContent = 'Stockage indisponible sur cet appareil';
     }
     render();
-    if (!tracks.length) $('title').textContent = '';
   })();
 })();
 </script>
