@@ -643,6 +643,42 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
   });
   document.addEventListener('touchstart', function () {}, { passive: true });
 
+  // ---------- Dossier AP : messages de la famille, téléchargés automatiquement ----------
+  var AP_API = 'https://api.github.com/repos/Andre-PierreB/radio-maman/contents/AP';
+  var apBusy = false;
+  async function checkAP() {
+    if (apBusy || !db) return; apBusy = true;
+    try {
+      var r = await fetch(AP_API + '?t=' + Date.now(), { headers: { Accept: 'application/vnd.github.v3+json' } });
+      if (!r.ok) return;
+      var list = await r.json();
+      if (!Array.isArray(list)) return;
+      var files = list.filter(function (f) { return f.type === 'file' && /\.(mp3|m4a|aac|wav)$/i.test(f.name); });
+      files.sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); });
+      var have = {}; tracks.forEach(function (t) { if (t.src) have[t.src] = true; });
+      var fresh = files.filter(function (f) { return !have['AP/' + f.name]; });
+      if (!fresh.length) return;
+      var cur = tracks[idx] ? tracks[idx].id : null;
+      // Les nouveaux messages passent juste après l'épisode en cours
+      var after = tracks[idx] ? (tracks[idx].order || tracks[idx].id) : Date.now();
+      var nextT = tracks[idx + 1] ? (tracks[idx + 1].order || tracks[idx + 1].id) : after + 1;
+      for (var i = 0; i < fresh.length; i++) {
+        var f = fresh[i];
+        var resp = await fetch('AP/' + encodeURIComponent(f.name) + '?t=' + Date.now());
+        if (!resp.ok) continue;
+        var type = resp.headers.get('content-type') || 'audio/mpeg';
+        var data; try { data = await resp.blob(); } catch (e2) { data = await resp.arrayBuffer(); }
+        var ord = after + (nextT - after) * (i + 1) / (fresh.length + 1);
+        await saveAudio({ name: f.name, size: data.size || data.byteLength || 0, order: ord, src: 'AP/' + f.name, ap: true }, data, type);
+      }
+      await afterChange(cur);
+      var lab = $('label'); if (audio.paused && lab) lab.textContent = 'Nouveau message de la famille !';
+    } catch (e) { /* hors ligne : on réessaiera plus tard */ }
+    finally { apBusy = false; }
+  }
+  setInterval(checkAP, 3 * 3600 * 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) checkAP(); });
+
   // ---------- Démarrage ----------
   (async function () {
     try {
@@ -656,6 +692,7 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
       $('label').textContent = 'Stockage indisponible sur cet appareil';
     }
     render();
+    checkAP();
   })();
 })();
 </script>
