@@ -694,6 +694,7 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
     render();
     checkAP();
   })();
+  if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {} }
 })();
 </script>
 
