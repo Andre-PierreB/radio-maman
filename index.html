@@ -163,14 +163,11 @@ body.playing #play { background: var(--btn-on); color: var(--btn-on-ink); }
 .spot-btn {
   position: absolute; z-index: 12;
   top: calc(3vmin + env(safe-area-inset-top, 0px)); right: calc(18vmin + env(safe-area-inset-right, 0px));
-  height: 11vmin; min-width: 11vmin; padding: 0 2.4vmin; border-radius: 5.5vmin;
+  width: 11vmin; height: 11vmin; border-radius: 50%;
   border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
   -webkit-transition: -webkit-transform .08s; transition: transform .08s;
 }
 .spot-btn svg { width: 6.4vmin; height: 6.4vmin; -webkit-flex: none; flex: none; }
-.spot-btn .word { display: none; font-size: 3.8vmin; font-weight: 700; margin-left: 1.6vmin; }
-/* En paysage il y a la place d'écrire le mot à côté du logo. */
-@media (orientation: landscape) { .spot-btn .word { display: inline; } }
 body.in-spot .spot-btn, body.in-spot .lock { display: none; }
 
 /* ---------- Écran Spotify ---------- */
@@ -300,7 +297,6 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       <circle cx="50" cy="50" r="46" fill="currentColor"/>
       <path d="M24 38 C42 31 62 32 78 41 M28 53 C43 47 59 48 72 55 M32 67 C44 62 56 63 66 68" fill="none" stroke="var(--bg-2)" stroke-width="7" stroke-linecap="round"/>
     </svg>
-    <span class="word">Spotify</span>
   </button>
 
   <div class="center flex-center">
@@ -348,11 +344,11 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M62 14 L26 50 L62 86" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/></svg>Radio
     </button>
     <button class="big-btn" id="spotBack" type="button" hidden>Autres podcasts</button>
-    <h2 id="spotTitle">Spotify</h2>
+    <h2 id="spotTitle">Podcasts</h2>
   </div>
   <div class="spot-body" id="spotBody">
     <div class="tiles" id="spotTiles"></div>
-    <div class="spot-empty" id="spotEmpty" hidden>Rien sur Spotify pour le moment.<br>André-Pierre va en ajouter.</div>
+    <div class="spot-empty" id="spotEmpty" hidden>Rien à écouter ici pour le moment.<br>André-Pierre va en ajouter.</div>
   </div>
   <div class="spot-hint">Volume : les boutons sur le côté de l'iPad</div>
 </div>
@@ -436,7 +432,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     <div class="row">
       <button class="pbtn primary" id="panelClose" type="button">Fermer les réglages</button>
     </div>
-    <p class="hint">Pour revenir ici : garder le doigt appuyé 3 secondes sur l'heure. · Version 2026-10-18 (Spotify)</p>
+    <p class="hint">Pour revenir ici : garder le doigt appuyé 3 secondes sur l'heure. · Version <span id="ver"></span></p>
   </div>
 </div>
 
@@ -1186,7 +1182,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     stopPlayer();
     $('spotTiles').hidden = false;
     $('spotBack').hidden = true;
-    $('spotTitle').textContent = 'Spotify';
+    $('spotTitle').textContent = 'Podcasts';
     renderSpotTiles();
   }
   function showPlayer(p) {
@@ -1318,6 +1314,27 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   }
   setInterval(checkAP, 3 * 3600 * 1000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { checkAP(); checkSpotGh(); } });
+
+  /* =====================================================================
+     Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
+     ===================================================================== */
+  var APP_VERSION = '2026-10-18c';   // à changer à chaque envoi sur GitHub
+  $('ver').textContent = APP_VERSION;
+
+  async function checkUpdate() {
+    // Jamais pendant l'écoute ni dans un écran ouvert : maman ne doit rien voir bouger.
+    if (!audio.paused || !spot.hidden || !$('panel').hidden || !sheet.hidden) return;
+    try {
+      var r = await fetch('index.html?v=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      var m = /var APP_VERSION = '([^']+)'/.exec(await r.text());
+      if (m && m[1] !== APP_VERSION) location.reload();
+    } catch (e) {
+      // Hors ligne : on garde la version actuelle.
+    }
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) checkUpdate(); });
+  setInterval(checkUpdate, 30 * 60 * 1000);
 
   /* =====================================================================
      Démarrage
