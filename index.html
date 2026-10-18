@@ -383,8 +383,16 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       <p>Choisissez une émission, cochez les épisodes, puis téléchargez-les. Ils restent sur l'iPad et s'écoutent sans internet.</p>
       <div class="row">
         <select id="feedSel" class="pbtn">
-          <option value="https://radiofrance-podcast.net/podcast09/rss_14435.xml">Le Fil de l'histoire (France Inter)</option>
-          <option value="https://radiofrance-podcast.net/podcast09/rss_10076.xml">Le Cours de l'histoire (France Culture)</option>
+          <optgroup label="Histoire">
+            <option value="https://radiofrance-podcast.net/podcast09/rss_14435.xml">Le Fil de l'histoire (France Inter)</option>
+            <option value="https://radiofrance-podcast.net/podcast09/rss_10076.xml">Le Cours de l'histoire (France Culture)</option>
+          </optgroup>
+          <optgroup label="Philosophie et réflexion">
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_ab366421-dded-4be6-ae28-38a10cdcf2b6.xml">Sous le soleil de Platon · Charles Pépin, 50 min (France Inter)</option>
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_47eac17e-0865-44e1-971b-1ad17271d21b.xml">Le Pourquoi du comment : philo · 3 min (France Culture)</option>
+            <option value="https://feeds.audiomeans.fr/feed/6ddf3fc9-50da-4731-98b7-3461d97873ef.xml">Kant à vous ! · 5 min (RTBF)</option>
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_b073d78c-d0d6-4910-b2e1-f9b370158a12.xml">Avec philosophie · 1 h (France Culture)</option>
+          </optgroup>
           <option value="autre">Autre émission (adresse du flux)…</option>
         </select>
         <button class="pbtn primary" id="loadFeed" type="button">Voir les épisodes</button>
@@ -640,9 +648,21 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     return true;
   }
 
+  // À la reprise, on recule un peu pour retrouver le fil : 5 s après une courte pause, 10 s après une longue ou à la réouverture.
+  var pausedAt = 0;
+  function rewindFor() { return pausedAt && Date.now() - pausedAt < 60000 ? 5 : 10; }
+
   async function play() {
     if (!tracks.length) return;
-    if (!hasSource()) await loadTrack(idx, savedPositionFor(current()));
+    var back = rewindFor();
+    if (!hasSource()) {
+      var t = savedPositionFor(current());
+      await loadTrack(idx, t > back ? t - back : 0);
+    } else if (pendingSeek) {
+      pendingSeek = Math.max(0, pendingSeek - back);        // position pas encore appliquée
+    } else if (audio.currentTime > 0) {
+      try { audio.currentTime = Math.max(0, audio.currentTime - back); } catch (e) {}
+    }
     try { await audio.play(); } catch (e) { $('label').textContent = 'Appuyez encore une fois'; }
   }
   function pause() { audio.pause(); }
@@ -691,7 +711,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   audio.addEventListener('durationchange', showTime);
   audio.addEventListener('play', function () { apNote = false; render(); keepAwake(true); });
   audio.addEventListener('playing', function () { errorsInRow = 0; });
-  audio.addEventListener('pause', function () { render(); saveState(); keepAwake(false); });
+  audio.addEventListener('pause', function () { pausedAt = Date.now(); render(); saveState(); keepAwake(false); });
   audio.addEventListener('ended', async function () { await loadTrack(idx + 1, 0); audio.play().catch(function () {}); });
   audio.addEventListener('error', async function () {
     // Un fichier illisible : on passe au suivant, sans tourner en rond.
@@ -1319,7 +1339,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   /* =====================================================================
      Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
      ===================================================================== */
-  var APP_VERSION = '2026-10-18d';   // à changer à chaque envoi sur GitHub
+  var APP_VERSION = '2026-10-18f';   // à changer à chaque envoi sur GitHub
   $('ver').textContent = APP_VERSION;
 
   async function checkUpdate() {
