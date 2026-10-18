@@ -3,204 +3,271 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#17130f">
 <title>Radio Maman</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Radio Maman">
+<meta name="theme-color" id="themeColor" content="#221c16">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<script>
+  // Applique l'ambiance choisie avant l'affichage, pour éviter un flash de couleur.
+  try { var t = JSON.parse(localStorage.getItem('radio-theme') || '"ambre"'); if (t !== 'ambre') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
 <style>
-/* Compatible vieux Safari (iOS 12+) : pas de clamp/min/aspect-ratio/gap flex/inset. Tailles en vmin. */
+/*
+  Radio Maman
+  Compatible Safari iOS 12 : pas de « gap » en flexbox, pas d'aspect-ratio, de inset ni de clamp().
+  Toutes les tailles sont en vmin pour suivre l'écran de l'iPad.
+*/
+
+/* ---------- Ambiances (contraste volontairement bas) ---------- */
 :root {
-  --bg: #17130f; --bg-2: #211b15; --fg: #efe4d2; --muted: #a89880;
-  --btn: #c98a3d; --btn-fg: #1a120a; --line: #3a3026; --danger: #c75a4a;
-  --font: "Atkinson Hyperlegible", "Verdana", -apple-system, sans-serif;
+  --bg: #221c16;  --bg-2: #2a231c;  --line: #3d3329;
+  --fg: #c8b596;  --strong: #c2ad8c; --muted: #8f7e66;
+  --btn: #b88550; --btn-ink: #5a3d22; --btn-on: #7e5c37; --btn-on-ink: #c9ad84;
+  --accent: #b98a52; --thumb: #a8916f; --ring: rgba(184,133,80,.14); --veil: rgba(34,28,22,.9);
+  --danger: #b0644f;
+  --font: "Atkinson Hyperlegible", Verdana, -apple-system, sans-serif;
 }
+html[data-theme="sauge"] {
+  --bg: #1b201b;  --bg-2: #222922;  --line: #333d32;
+  --fg: #b9c2aa;  --strong: #b3bd9f; --muted: #7f8a72;
+  --btn: #8f9f72; --btn-ink: #333d26; --btn-on: #5d6b4a; --btn-on-ink: #c1caa8;
+  --accent: #98a878; --thumb: #9aa486; --ring: rgba(143,159,114,.15); --veil: rgba(27,32,27,.9);
+  --danger: #b0705a;
+}
+html[data-theme="ardoise"] {
+  --bg: #1a1d24;  --bg-2: #21252e;  --line: #323947;
+  --fg: #b4bccb;  --strong: #aab3c4; --muted: #7a8396;
+  --btn: #7f8fb0; --btn-ink: #283146; --btn-on: #4f5c78; --btn-on-ink: #bcc6da;
+  --accent: #8d9cc0; --thumb: #929db3; --ring: rgba(127,143,176,.15); --veil: rgba(26,29,36,.9);
+  --danger: #b56a64;
+}
+
+/* ---------- Base ---------- */
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: #17130f; background: var(--bg); color: var(--fg); font-family: var(--font);
-  overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
-  -webkit-text-size-adjust: 100%;
+  background: var(--bg); color: var(--fg); font-family: var(--font);
+  overflow: hidden; -webkit-text-size-adjust: 100%;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  -webkit-transition: background-color .6s, color .6s; transition: background-color .6s, color .6s;
 }
-button { font-family: inherit; -webkit-appearance: none; -webkit-tap-highlight-color: rgba(0,0,0,0); }
+button {
+  font-family: inherit; cursor: pointer; padding: 0;
+  -webkit-appearance: none; -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+button:disabled { opacity: .35; cursor: default; }
+.flex-center {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+}
+
+/* ---------- Écran principal ---------- */
 .app {
-  height: 100%; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column;
-  -webkit-align-items: center; align-items: center; padding: 3vmin 16px 4vmin;
+  position: relative; height: 100%;
+  display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: center; align-items: center;
+  padding: calc(3vmin + env(safe-area-inset-top, 0px)) 16px calc(4vmin + env(safe-area-inset-bottom, 0px));
 }
+
 .clock { text-align: center; cursor: default; }
-.clock .time { font-size: 14vmin; font-weight: 700; line-height: 1; }
-.clock .date { font-size: 4.6vmin; color: var(--muted); margin-top: 1.2vmin; text-transform: capitalize; }
-
-.center {
-  -webkit-flex: 1; flex: 1; display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+.clock .time { font-size: 13vmin; font-weight: 700; line-height: 1; color: var(--strong); }
+.clock .date { font-size: 4.4vmin; color: var(--muted); margin-top: 1.2vmin; text-transform: capitalize; }
+.hello {
+  font-size: 4.2vmin; font-weight: 700; color: var(--accent); margin-top: 1.2vmin;
+  opacity: 0; -webkit-transition: opacity .8s; transition: opacity .8s;
 }
+.hello.show { opacity: 1; }
+
+.center { -webkit-flex: 1; flex: 1; }
 .center > * { margin: 0 3vmin; }
-#play {
-  width: 44vmin; height: 44vmin; border-radius: 50%; border: none; padding: 0;
-  background: var(--btn); color: var(--btn-fg); cursor: pointer;
-  box-shadow: 0 0 0 2.2vmin rgba(201,138,61,.14);
-  display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-}
-body.playing #play { box-shadow: 0 0 0 2.2vmin rgba(201,138,61,.25), 0 0 0 4.6vmin rgba(201,138,61,.08); }
-#play:active { -webkit-transform: scale(.96); transform: scale(.96); }
-#play svg { width: 18vmin; height: 18vmin; display: block; }
-#play[disabled] { background: var(--line); color: var(--muted); box-shadow: none; }
-.side {
-  width: 14vmin; height: 14vmin; border-radius: 50%; padding: 0;
-  border: 3px solid var(--line); background: var(--bg-2); color: var(--fg); cursor: pointer;
-  display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-}
-.side svg { width: 6.5vmin; height: 6.5vmin; display: block; }
-.side:active { -webkit-transform: scale(.94); transform: scale(.94); }
-.side[disabled] { opacity: .35; }
 
-.now { text-align: center; max-width: 90%; min-height: 12vmin; }
-.now .label { font-size: 4vmin; color: var(--muted); }
-.now .title { font-size: 5.4vmin; font-weight: 700; margin-top: 1vmin; word-wrap: break-word; }
-.bar { width: 70vmin; max-width: 100%; height: 6px; border-radius: 3px; background: var(--line); margin: 2.4vmin auto 0; overflow: hidden; }
-.bar i { display: block; height: 100%; width: 0; background: var(--muted); }
+.round {
+  border-radius: 50%;
+  -webkit-transition: -webkit-transform .08s, background-color .4s, color .4s;
+  transition: transform .08s, background-color .4s, color .4s;
+}
+.side { width: 14vmin; height: 14vmin; border: 3px solid var(--line); background: var(--bg-2); color: var(--fg); }
+.side svg { width: 6.5vmin; height: 6.5vmin; }
+
+#play {
+  width: 38vmin; height: 38vmin; border: 0;
+  background: var(--btn); color: var(--btn-ink);
+  -webkit-flex-direction: column; flex-direction: column;
+  box-shadow: 0 0 0 1.6vmin var(--ring);
+}
+#play svg { width: 14vmin; height: 14vmin; }
+#play .word { font-size: 5vmin; font-weight: 700; margin-top: 1.4vmin; }
+body.playing #play { background: var(--btn-on); color: var(--btn-on-ink); }
+.ico { display: block; line-height: 0; }
+
+/* Réaction immédiate au toucher */
+.pressed { -webkit-transform: scale(.93); transform: scale(.93); -webkit-filter: brightness(1.12); filter: brightness(1.12); }
+
+.now { text-align: center; width: 100%; max-width: 90vmin; }
+.now .label { font-size: 4vmin; color: var(--muted); min-height: 5vmin; }
+.now .title {
+  font-size: 4.8vmin; font-weight: 700; color: var(--strong);
+  margin-top: 1vmin; min-height: 12vmin; word-wrap: break-word;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.seek { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; width: 84vmin; max-width: 100%; margin: 2vmin auto 0; }
+.seek .tm { width: 12vmin; font-size: 3.2vmin; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+#seek { -webkit-flex: 1; flex: 1; height: 7vmin; margin: 0 1vmin; background: transparent; -webkit-appearance: none; appearance: none; }
+#seek::-webkit-slider-runnable-track { height: 1.4vmin; border-radius: 1vmin; background: var(--line); }
+#seek::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 6vmin; height: 6vmin; margin-top: -2.3vmin;
+  border-radius: 50%; background: var(--thumb); box-shadow: 0 0 0 .8vmin var(--ring);
+}
 
 .controls { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: center; justify-content: center; margin-top: 3vmin; }
-.group { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin: 1vmin 3vmin; }
+.group { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin: 1vmin 2vmin; }
 .group > * { margin: 0 1.2vmin; }
 .group .name { font-size: 3.4vmin; color: var(--muted); text-align: center; margin-bottom: 1vmin; }
 .ctl {
-  width: 12vmin; height: 12vmin; border-radius: 2.4vmin; border: 3px solid var(--line); padding: 0;
-  background: var(--bg-2); color: var(--fg); font-size: 7vmin; font-weight: 700; line-height: 1; cursor: pointer;
+  width: 10.5vmin; height: 10.5vmin; border-radius: 2.4vmin;
+  border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
+  font-size: 6vmin; font-weight: 700; line-height: 1;
+  -webkit-transition: -webkit-transform .08s; transition: transform .08s;
 }
-.ctl:active { background: var(--line); }
-.ctl[disabled] { opacity: .35; }
-.meter { display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; -webkit-justify-content: center; justify-content: center; height: 4vmin; }
-.meter i { width: 1.1vmin; background: var(--line); border-radius: 2px; margin: 0 .3vmin; }
-.meter i.on { background: var(--btn); }
+.meter { height: 4vmin; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; -webkit-justify-content: center; justify-content: center; }
+.meter i { width: .9vmin; margin: 0 .25vmin; border-radius: 2px; background: var(--line); }
+.meter i.on { background: var(--accent); }
 
-#dim { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; opacity: 0; pointer-events: none; z-index: 10; }
+/* Voile de clarté : ne bloque pas les doigts */
+#dim { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: #000; opacity: 0; pointer-events: none; -webkit-transition: opacity .3s; transition: opacity .3s; }
 
-/* Réglages (pour la famille) */
+/* ---------- Cadenas ---------- */
+.lock {
+  position: absolute; z-index: 12;
+  top: calc(3vmin + env(safe-area-inset-top, 0px)); right: calc(4vmin + env(safe-area-inset-right, 0px));
+  width: 11vmin; height: 11vmin; border: 0; background: transparent; color: var(--muted);
+}
+.lock svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.lock .ring { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; }
+.lock.holding .ring { stroke-dashoffset: 0; -webkit-transition: stroke-dashoffset 1.5s linear; transition: stroke-dashoffset 1.5s linear; }
+.lock .shut-open { display: none; }
+.lock.open .shut { display: none; }
+.lock.open .shut-open { display: inline; }
+
+/* ---------- Molette des ambiances ---------- */
+.sheet {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 15; background: var(--veil);
+  -webkit-flex-direction: column; flex-direction: column;
+  opacity: 0; -webkit-transition: opacity .35s; transition: opacity .35s;
+}
+.sheet.show { opacity: 1; }
+.sheet h2 { margin: 0 0 2vmin; font-size: 4.6vmin; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.dial { position: relative; width: 56vmin; height: 48vmin; }
+.knob {
+  position: absolute; left: 13vmin; top: 15vmin; width: 30vmin; height: 30vmin;
+  border-radius: 50%; box-shadow: 0 1.4vmin 0 rgba(0,0,0,.25); touch-action: none;
+}
+.knob svg { display: block; width: 100%; height: 100%; -webkit-transition: -webkit-transform .45s cubic-bezier(.3,1.4,.5,1); transition: transform .45s cubic-bezier(.3,1.4,.5,1); }
+.knob.dragging svg { -webkit-transition: none; transition: none; }
+.knob .face { fill: var(--bg-2); stroke: var(--line); stroke-width: 3; }
+.knob .tick { stroke: var(--line); stroke-width: 2.5; stroke-linecap: round; }
+.knob .pointer { stroke: var(--accent); stroke-width: 7; stroke-linecap: round; }
+.knob .cap { fill: var(--line); }
+.dot { position: absolute; width: 10vmin; height: 10vmin; margin: -5vmin 0 0 -5vmin; border-radius: 50%; border: .7vmin solid transparent; }
+.dot.on { border-color: var(--strong); }
+.sheet .tname { margin-top: 2vmin; font-size: 6.4vmin; font-weight: 700; color: var(--strong); }
+.sheet .thint { margin-top: 1.2vmin; font-size: 3.4vmin; color: var(--muted); }
+.big-btn {
+  margin-top: 5vmin; padding: 2.2vmin 7vmin; border-radius: 3vmin;
+  border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
+  font-size: 4.2vmin; font-weight: 700;
+}
+
+/* ---------- Réglages de la famille ---------- */
 .panel {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-2); overflow-y: auto; -webkit-overflow-scrolling: touch;
-  z-index: 20; padding: 24px 20px; font-size: 18px; -webkit-user-select: text; user-select: text;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 20;
+  padding: 24px 20px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: var(--bg-2); font-size: 18px; -webkit-user-select: text; user-select: text;
 }
 .panel-inner { max-width: 640px; margin: 0 auto; }
 .panel-inner > * { margin: 0 0 20px; }
 .panel h2 { font-size: 28px; }
 .panel p { color: var(--muted); line-height: 1.5; }
-.row { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
-.row > * { margin: 0 12px 12px 0; }
-.pbtn { font-size: 18px; font-weight: 700; padding: 14px 20px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; display: inline-block; }
-.pbtn.primary { background: var(--btn); color: var(--btn-fg); border-color: var(--btn); }
-.pbtn.danger { color: var(--danger); border-color: var(--danger); }
-.stats { color: var(--fg); }
-ol.tracks { padding-left: 1.6em; max-height: 40vh; overflow-y: auto; }
-ol.tracks li { margin-bottom: 6px; word-wrap: break-word; }
-ol.tracks li.cur { color: var(--btn); font-weight: 700; }
-.confirm { border: 1px solid var(--danger); border-radius: 10px; padding: 16px; }
-.hint { font-size: 15px; }
-#msg:empty { display: none; }
-#msg { color: var(--btn); font-weight: 700; }
 .box { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
 .box > * { margin: 0 0 14px; }
 .box h3 { font-size: 22px; margin-bottom: 8px; }
+.row { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+.row > * { margin: 0 12px 12px 0; }
+.pbtn {
+  display: inline-block; padding: 14px 20px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+  font-size: 18px; font-weight: 700;
+}
+.pbtn.primary { background: var(--btn); color: var(--btn-ink); border-color: var(--btn); }
+.pbtn.danger { color: var(--danger); border-color: var(--danger); }
 select.pbtn { -webkit-appearance: menulist; max-width: 100%; }
-.field { width: 100%; font-size: 18px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
-.note { color: var(--btn); font-weight: 700; }
-.note:empty { display: none; }
+.field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font-size: 18px; }
+.note, #msg { color: var(--accent); font-weight: 700; }
+.note:empty, #msg:empty { display: none; }
+.stats { color: var(--fg); }
 .episodes { max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .episodes:empty { display: none; }
 .ep { display: -webkit-flex; display: flex; -webkit-align-items: flex-start; align-items: flex-start; padding: 10px 4px; border-bottom: 1px solid var(--line); }
-.ep input { width: 26px; height: 26px; margin: 2px 14px 0 0; -webkit-flex: none; flex: none; }
+.ep input { -webkit-flex: none; flex: none; width: 26px; height: 26px; margin: 2px 14px 0 0; }
 .ep .t { -webkit-flex: 1; flex: 1; min-width: 0; word-wrap: break-word; }
-.ep .d { color: var(--muted); font-size: 15px; display: block; margin-top: 2px; }
+.ep .d { display: block; margin-top: 2px; color: var(--muted); font-size: 15px; }
 .ep.have .t { color: var(--muted); }
-ol.tracks li { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
-ol.tracks li span { -webkit-flex: 1; flex: 1; min-width: 0; }
-.rm { font-size: 15px; padding: 6px 10px; margin-left: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); }
+ol.tracks { max-height: 40vh; overflow-y: auto; padding-left: 1.6em; }
+ol.tracks li { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-bottom: 6px; }
+ol.tracks li span { -webkit-flex: 1; flex: 1; min-width: 0; word-wrap: break-word; }
+ol.tracks li.cur { color: var(--accent); font-weight: 700; }
+.rm { margin-left: 10px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-size: 15px; }
+.confirm { border: 1px solid var(--danger); border-radius: 10px; padding: 16px; }
+.hint { font-size: 15px; }
 
-/* v4 : bouton plus clair et réactif, curseur de lecture, mise en page portrait */
-.hello { font-size: 4.2vmin; color: var(--btn); margin-top: 1.2vmin; font-weight: 700; }
-#play {
-  width: 40vmin; height: 40vmin; background: #e8a54e; color: #1a120a;
-  -webkit-flex-direction: column; flex-direction: column;
-  box-shadow: 0 0 0 1.6vmin rgba(232,165,78,.18), 0 1vmin 0 rgba(0,0,0,.35);
-  -webkit-transition: -webkit-transform .08s ease, background .15s; transition: transform .08s ease, background .15s;
+@media (prefers-reduced-motion: reduce) {
+  body, .round, .hello, #dim, .sheet, .knob svg { -webkit-transition: none !important; transition: none !important; }
 }
-#play svg { width: 15vmin; height: 15vmin; }
-#play .pword { font-size: 5vmin; font-weight: 700; margin-top: 1.4vmin; letter-spacing: .02em; }
-#play.pressed, #play:active { -webkit-transform: scale(.93); transform: scale(.93); background: #f5c27a; }
-body.playing #play { background: #f1e3c8; color: #2a1d10; box-shadow: 0 0 0 1.6vmin rgba(241,227,200,.18), 0 0 0 4vmin rgba(232,165,78,.10), 0 1vmin 0 rgba(0,0,0,.35); }
-#play[disabled] { background: var(--line); color: var(--muted); box-shadow: none; }
-.side.pressed, .ctl.pressed { -webkit-transform: scale(.92); transform: scale(.92); background: var(--line); }
-.now .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 4.8vmin; }
-.seek { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; width: 84vmin; max-width: 100%; margin: 2vmin auto 0; }
-.seek .tm { font-size: 3.2vmin; color: var(--muted); width: 12vmin; text-align: center; font-variant-numeric: tabular-nums; }
-#seek { -webkit-flex: 1; flex: 1; -webkit-appearance: none; appearance: none; height: 7vmin; background: transparent; margin: 0 1vmin; }
-#seek::-webkit-slider-runnable-track { height: 1.4vmin; border-radius: 1vmin; background: var(--line); }
-#seek::-webkit-slider-thumb { -webkit-appearance: none; width: 6vmin; height: 6vmin; border-radius: 50%; background: var(--fg); margin-top: -2.3vmin; box-shadow: 0 0 0 .8vmin rgba(232,165,78,.35); }
-.ctl { width: 10.5vmin; height: 10.5vmin; font-size: 6vmin; }
-.meter i { width: .9vmin; margin: 0 .25vmin; }
-.group { margin: 1vmin 2vmin; }
-@media (orientation: portrait) {
-  #play { width: 38vmin; height: 38vmin; }
-  .clock .time { font-size: 13vmin; }
-}
-
-/* v5 : contrastes doux, pause visible, message passager */
-:root { --fg: #e6d5ba; }
-.ico { display: block; line-height: 0; }
-#play { background: #e0a050; color: #3a2614; }
-#play.pressed, #play:active { background: #eab56c; }
-body.playing #play { background: #9c6e38; color: #f0d9b5; box-shadow: 0 0 0 1.6vmin rgba(156,110,56,.25), 0 0 0 4vmin rgba(224,160,80,.10), 0 1vmin 0 rgba(0,0,0,.35); }
-body.playing #play.pressed, body.playing #play:active { background: #ad7d44; }
-#seek::-webkit-slider-thumb { background: #d9c3a0; }
-.hello { opacity: 0; -webkit-transition: opacity .8s ease; transition: opacity .8s ease; }
-.hello.show { opacity: 1; }
-
-/* v6 : contraste nettement réduit partout */
-:root { --bg: #221c16; --bg-2: #2a231c; --fg: #c8b596; --muted: #8f7e66; --line: #3d3329; --btn: #b98a52; }
-body { background: #221c16; }
-.clock .time { color: #c2ad8c; }
-.now .title { color: #c2ad8c; }
-.hello { color: #b98a52; }
-#play { background: #b88550; color: #5a3d22; box-shadow: 0 0 0 1.6vmin rgba(184,133,80,.14); }
-#play.pressed, #play:active { background: #c4925e; }
-body.playing #play { background: #7e5c37; color: #c9ad84; box-shadow: 0 0 0 1.6vmin rgba(126,92,55,.25), 0 0 0 4vmin rgba(184,133,80,.07); }
-body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
-.side, .ctl { color: #b3a083; border-color: #3d3329; }
-#seek::-webkit-slider-thumb { background: #a8916f; box-shadow: 0 0 0 .8vmin rgba(184,133,80,.25); }
-.meter i.on { background: #a87c49; }
 </style>
 </head>
 <body>
 
 <div class="app">
-  <div class="clock" id="clock" aria-label="Heure">
+  <div class="clock" id="clock">
     <div class="time" id="time">--:--</div>
     <div class="date" id="date"></div>
     <div class="hello" id="hello">Bonne écoute, maman chérie</div>
   </div>
 
-  <div class="center">
-    <button class="side" id="prev" type="button" aria-label="Émission précédente">
+  <button class="lock" id="lock" type="button" aria-label="Couleurs : garder le doigt appuyé pour déverrouiller">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <circle class="ring" cx="50" cy="50" r="45" transform="rotate(-90 50 50)"/>
+      <rect x="30" y="46" width="40" height="30" rx="6" fill="currentColor"/>
+      <path class="shut" d="M38 46 V36 a12 12 0 0 1 24 0 V46" fill="none" stroke="currentColor" stroke-width="6"/>
+      <path class="shut-open" d="M38 46 V30 a12 12 0 0 1 24 0 V33" fill="none" stroke="currentColor" stroke-width="6"/>
+    </svg>
+  </button>
+
+  <div class="center flex-center">
+    <button class="side round flex-center" id="prev" type="button" aria-label="Émission précédente">
       <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="16" y="20" width="12" height="60" rx="3" fill="currentColor"/><path d="M84 20 L36 50 L84 80 Z" fill="currentColor"/></svg>
     </button>
-    <button id="play" type="button" aria-label="Écouter">
-      <span id="icoPlay" class="ico"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M30 18 L84 50 L30 82 Z" fill="currentColor"/></svg></span>
-      <span id="icoPause" class="ico" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="24" y="18" width="18" height="64" rx="4" fill="currentColor"/><rect x="58" y="18" width="18" height="64" rx="4" fill="currentColor"/></svg></span>
-      <span class="pword" id="pword">Écouter</span>
+    <button class="round flex-center" id="play" type="button" aria-label="Écouter">
+      <span class="ico" id="icoPlay"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M30 18 L84 50 L30 82 Z" fill="currentColor"/></svg></span>
+      <span class="ico" id="icoPause" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="24" y="18" width="18" height="64" rx="4" fill="currentColor"/><rect x="58" y="18" width="18" height="64" rx="4" fill="currentColor"/></svg></span>
+      <span class="word" id="playWord">Écouter</span>
     </button>
-    <button class="side" id="nextMain" type="button" aria-label="Émission suivante">
+    <button class="side round flex-center" id="next" type="button" aria-label="Émission suivante">
       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M16 20 L64 50 L16 80 Z" fill="currentColor"/><rect x="72" y="20" width="12" height="60" rx="3" fill="currentColor"/></svg>
     </button>
   </div>
 
   <div class="now">
-    <div class="label" id="label">Appuyez sur le bouton pour écouter</div>
+    <div class="label" id="label">Appuyez pour écouter</div>
     <div class="title" id="title"></div>
     <div class="seek">
       <span class="tm" id="tCur">0:00</span>
@@ -211,19 +278,38 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
 
   <div class="controls">
     <div class="group" role="group" aria-label="Volume">
-      <button class="ctl" id="volDown" type="button" aria-label="Moins fort">−</button>
+      <button class="ctl flex-center" id="volDown" type="button" aria-label="Moins fort">−</button>
       <div><div class="name">Volume</div><div class="meter" id="volMeter"></div></div>
-      <button class="ctl" id="volUp" type="button" aria-label="Plus fort">+</button>
+      <button class="ctl flex-center" id="volUp" type="button" aria-label="Plus fort">+</button>
     </div>
     <div class="group" role="group" aria-label="Clarté de l'écran">
-      <button class="ctl" id="dimDown" type="button" aria-label="Plus sombre">−</button>
+      <button class="ctl flex-center" id="dimDown" type="button" aria-label="Plus sombre">−</button>
       <div><div class="name">Clarté</div><div class="meter" id="dimMeter"></div></div>
-      <button class="ctl" id="dimUp" type="button" aria-label="Plus clair">+</button>
+      <button class="ctl flex-center" id="dimUp" type="button" aria-label="Plus clair">+</button>
     </div>
   </div>
 </div>
 <div id="dim"></div>
 
+<!-- Molette des ambiances (derrière le cadenas) -->
+<div class="sheet flex-center" id="sheet" hidden>
+  <h2>Couleurs</h2>
+  <div class="dial" id="dial">
+    <div class="knob" id="knob" role="slider" aria-label="Ambiance de couleur">
+      <svg viewBox="0 0 100 100" id="knobSvg" aria-hidden="true">
+        <circle class="face" cx="50" cy="50" r="47"/>
+        <g id="ticks"></g>
+        <line class="pointer" x1="50" y1="46" x2="50" y2="12"/>
+        <circle class="cap" cx="50" cy="50" r="9"/>
+      </svg>
+    </div>
+  </div>
+  <div class="tname" id="tname"></div>
+  <div class="thint">Tournez la molette ou touchez une couleur</div>
+  <button class="big-btn" id="sheetClose" type="button">Fermer</button>
+</div>
+
+<!-- Réglages de la famille (doigt appuyé 3 secondes sur l'heure) -->
 <div class="panel" id="panel" hidden>
   <div class="panel-inner">
     <h2>Réglages</h2>
@@ -268,7 +354,7 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
     </section>
 
     <div class="row">
-      <button class="pbtn primary" id="close" type="button">Fermer les réglages</button>
+      <button class="pbtn primary" id="panelClose" type="button">Fermer les réglages</button>
     </div>
     <p class="hint">Pour revenir ici : garder le doigt appuyé 3 secondes sur l'heure.</p>
   </div>
@@ -279,20 +365,70 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
 <script>
 (function () {
   'use strict';
+
+  /* =====================================================================
+     Outils
+     ===================================================================== */
   var $ = function (id) { return document.getElementById(id); };
   var audio = $('audio');
-  var DB_NAME = 'radio-maman', META = 'meta', DATA = 'audio';
-  var apNote = false, db = null, tracks = [], idx = 0, curUrl = null, wakeLock = null, pendingSeek = 0;
 
-  // ---------- Horloge ----------
-  function tick() {
-    var d = new Date();
-    $('time').textContent = d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
-    $('date').textContent = d.toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' });
+  function on(el, events, fn, opts) {
+    events.split(' ').forEach(function (ev) { el.addEventListener(ev, fn, opts || false); });
   }
-  tick(); setInterval(tick, 10000);
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-  // ---------- Stockage : métadonnées et sons séparés ----------
+  var prefs = {
+    get: function (key, fallback) {
+      try { var v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; }
+    },
+    set: function (key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    }
+  };
+
+  // Doigt maintenu : onDone après « ms » millisecondes, onCancel si on lâche avant.
+  function holdable(el, ms, onStart, onDone, onCancel) {
+    var timer = null;
+    function start() {
+      if (timer) return;
+      if (onStart) onStart();
+      timer = setTimeout(function () { timer = null; onDone(); }, ms);
+    }
+    function cancel() {
+      if (!timer) return;
+      clearTimeout(timer); timer = null;
+      if (onCancel) onCancel();
+    }
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('mousedown', start);
+    on(el, 'touchend touchcancel mouseup mouseleave', cancel);
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
+  // Le bouton s'enfonce dès qu'on le touche.
+  function pressable(el) {
+    el.addEventListener('touchstart', function () { if (!el.disabled) el.classList.add('pressed'); }, { passive: true });
+    on(el, 'touchend touchcancel mouseup mouseleave', function () {
+      setTimeout(function () { el.classList.remove('pressed'); }, 90);
+    });
+  }
+
+  function pretty(name) {
+    return String(name).replace(/\.(mp3|m4a|aac|wav)$/i, '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function fmtTime(t) {
+    t = Math.max(0, Math.floor(t || 0));
+    var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+    return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+  function fmtMo(bytes) { return Math.round(bytes / 1048576) + ' Mo'; }
+
+  /* =====================================================================
+     Stockage des épisodes (IndexedDB : fiches et sons séparés)
+     ===================================================================== */
+  var DB_NAME = 'radio-maman', META = 'meta', DATA = 'audio';
+  var db = null;
+
   function openDB() {
     return new Promise(function (res, rej) {
       var r = indexedDB.open(DB_NAME, 1);
@@ -305,291 +441,561 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
       r.onerror = function () { rej(r.error); };
     });
   }
-  function req(r) { return new Promise(function (res, rej) { r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; }); }
-  function done(t) { return new Promise(function (res, rej) { t.oncomplete = function () { res(); }; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error || new Error('abort')); }; }); }
-
+  function request(r) {
+    return new Promise(function (res, rej) { r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; });
+  }
+  function complete(t) {
+    return new Promise(function (res, rej) {
+      t.oncomplete = function () { res(); };
+      t.onerror = function () { rej(t.error); };
+      t.onabort = function () { rej(t.error || new Error('abort')); };
+    });
+  }
+  function readBuffer(blob) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () { res(fr.result); };
+      fr.onerror = function () { rej(fr.error); };
+      fr.readAsArrayBuffer(blob);
+    });
+  }
   async function addTrack(meta, payload) {
-    // payload : { blob } ou { buf, type }
     var t = db.transaction([META, DATA], 'readwrite');
-    var p = done(t);
+    var done = complete(t);
     var r = t.objectStore(META).add(meta);
     r.onsuccess = function () { t.objectStore(DATA).put(payload, r.result); };
-    await p;
+    await done;
   }
-  async function saveAudio(meta, blobOrBuf, type) {
-    if (blobOrBuf instanceof Blob) {
-      try { await addTrack(meta, { blob: blobOrBuf }); return; } catch (e) { /* vieux Safari : on passe aux octets */ }
-      blobOrBuf = await readBuf(blobOrBuf);
+  // Le vieux Safari refuse parfois de garder un fichier tel quel : on garde alors ses octets.
+  async function saveAudio(meta, data, type) {
+    if (data instanceof Blob) {
+      try { await addTrack(meta, { blob: data }); return; } catch (e) {}
+      data = await readBuffer(data);
     }
-    await addTrack(meta, { buf: blobOrBuf, type: type || 'audio/mpeg' });
+    await addTrack(meta, { buf: data, type: type || 'audio/mpeg' });
   }
-  async function loadMeta() {
-    var all = await req(db.transaction(META, 'readonly').objectStore(META).getAll());
+  async function readAllMeta() {
+    var all = await request(db.transaction(META, 'readonly').objectStore(META).getAll());
     all.sort(function (a, b) { return (a.order || a.id) - (b.order || b.id); });
-    tracks = all;
+    return all;
   }
-  async function getBlob(id) {
-    var v = await req(db.transaction(DATA, 'readonly').objectStore(DATA).get(id));
+  async function readAudio(id) {
+    var v = await request(db.transaction(DATA, 'readonly').objectStore(DATA).get(id));
     if (!v) return null;
     if (v.blob) return v.blob;
     if (v.buf) return new Blob([v.buf], { type: v.type || 'audio/mpeg' });
     return null;
   }
-  async function removeTrack(id) {
-    var t = db.transaction([META, DATA], 'readwrite'); var p = done(t);
-    t.objectStore(META).delete(id); t.objectStore(DATA).delete(id);
-    await p;
+  async function deleteTrack(id) {
+    var t = db.transaction([META, DATA], 'readwrite');
+    var done = complete(t);
+    t.objectStore(META).delete(id);
+    t.objectStore(DATA).delete(id);
+    await done;
   }
-  async function clearAll() {
-    var t = db.transaction([META, DATA], 'readwrite'); var p = done(t);
-    t.objectStore(META).clear(); t.objectStore(DATA).clear();
-    await p;
+  async function deleteAll() {
+    var t = db.transaction([META, DATA], 'readwrite');
+    var done = complete(t);
+    t.objectStore(META).clear();
+    t.objectStore(DATA).clear();
+    await done;
   }
-  function readBuf(file) {
-    return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = function () { rej(fr.error); }; fr.readAsArrayBuffer(file); });
+
+  /* =====================================================================
+     Horloge et message de bienvenue
+     ===================================================================== */
+  function tick() {
+    var d = new Date();
+    $('time').textContent = d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
+    $('date').textContent = d.toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' });
   }
+  tick();
+  setInterval(tick, 10000);
+
+  var helloTimer = null;
+  function sayHello() {
+    var h = $('hello');
+    h.classList.add('show');
+    clearTimeout(helloTimer);
+    helloTimer = setTimeout(function () { h.classList.remove('show'); }, 10000);
+  }
+
+  /* =====================================================================
+     Lecteur
+     ===================================================================== */
+  var tracks = [], idx = 0, objectUrl = null, pendingSeek = 0, seeking = false, apNote = false, errorsInRow = 0;
+
+  function current() { return tracks[idx] || null; }
+  function hasSource() { return !!audio.getAttribute('src'); }
+  function duration() { return audio.duration && isFinite(audio.duration) ? audio.duration : 0; }
+
   function saveState() {
-    try { localStorage.setItem('radio-state', JSON.stringify({ id: tracks[idx] ? tracks[idx].id : null, t: audio.currentTime || pendingSeek || 0 })); } catch (e) {}
+    var c = current();
+    prefs.set('radio-state', { id: c ? c.id : null, t: audio.currentTime || pendingSeek || 0 });
   }
-  function readState() {
-    try { return JSON.parse(localStorage.getItem('radio-state') || 'null'); } catch (e) { return null; }
-  }
-
-  // ---------- Affichage ----------
-  function pretty(n) { return String(n).replace(/\.(mp3|m4a|aac|wav)$/i, '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim(); }
-  function render() {
-    var has = tracks.length > 0;
-    $('play').disabled = !has;
-    $('prev').disabled = $('nextMain').disabled = tracks.length < 2;
-    var playing = !audio.paused;
-    if (!has) { $('label').textContent = 'Rien à écouter pour le moment'; $('title').textContent = ''; }
-    else { $('label').textContent = playing ? 'En écoute' : (apNote ? 'André-Pierre a ajouté un nouvel élément' : 'Appuyez pour écouter'); $('title').textContent = pretty(tracks[idx].name); }
-    document.body.classList.toggle('playing', playing);
-    $('icoPlay').hidden = playing; $('icoPause').hidden = !playing;
-    $('play').setAttribute('aria-label', playing ? 'Pause' : 'Écouter');
-    $('pword').textContent = playing ? 'Pause' : 'Écouter';
-  }
-  function fmtMo(b) { return Math.round(b / 1048576) + ' Mo'; }
-  function renderPanel() {
-    var total = tracks.reduce(function (s, t) { return s + (t.size || 0); }, 0);
-    $('stats').textContent = tracks.length ? tracks.length + ' épisode' + (tracks.length > 1 ? 's' : '') + ' · ' + fmtMo(total) : 'Aucun épisode pour le moment.';
-    var ol = $('list'); ol.innerHTML = '';
-    tracks.forEach(function (t, i) {
-      var li = document.createElement('li'); if (i === idx) li.className = 'cur';
-      var sp = document.createElement('span'); sp.textContent = pretty(t.name); li.appendChild(sp);
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'rm'; b.textContent = 'Retirer';
-      b.addEventListener('click', function () { removeOne(t.id); });
-      li.appendChild(b); ol.appendChild(li);
-    });
-    if (navigator.storage && navigator.storage.estimate) {
-      navigator.storage.estimate().then(function (e) { if (e && e.quota) $('stats').textContent += ' · place ≈ ' + (e.quota / 1073741824).toFixed(1) + ' Go'; }).catch(function () {});
-    }
+  function savedPositionFor(track) {
+    var st = prefs.get('radio-state', null);
+    return st && track && st.id === track.id ? st.t : 0;
   }
 
-  // ---------- Lecture ----------
-  async function loadTrack(i, seek) {
+  async function reloadTracks(keepId) {
+    tracks = await readAllMeta();
+    var i = keepId != null ? tracks.findIndex(function (t) { return t.id === keepId; }) : -1;
+    idx = i >= 0 ? i : Math.min(idx, Math.max(0, tracks.length - 1));
+  }
+
+  function clearSource() {
+    audio.pause();
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+  }
+
+  async function loadTrack(i, seekTo) {
     if (!tracks.length) return false;
     idx = ((i % tracks.length) + tracks.length) % tracks.length;
-    var blob = await getBlob(tracks[idx].id);
+    var blob = await readAudio(tracks[idx].id);
     if (!blob) return false;
-    if (curUrl) URL.revokeObjectURL(curUrl);
-    curUrl = URL.createObjectURL(blob);
-    pendingSeek = seek || 0;
-    audio.src = curUrl;
-    setMediaSession(); render(); saveState();
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(blob);
+    pendingSeek = seekTo || 0;
+    audio.src = objectUrl;
+    render(); showTime(); saveState();
     return true;
   }
-  audio.addEventListener('loadedmetadata', function () {
-    if (pendingSeek && pendingSeek < audio.duration - 5) { try { audio.currentTime = pendingSeek; } catch (e) {} }
-    pendingSeek = 0;
-  });
+
   async function play() {
-    if (!audio.src || audio.src === location.href) {
-      var st = readState(); var i = 0, t = 0;
-      if (st) { var f = tracks.findIndex(function (x) { return x.id === st.id; }); if (f >= 0) { i = f; t = st.t; } }
-      await loadTrack(i, t);
-    }
+    if (!tracks.length) return;
+    if (!hasSource()) await loadTrack(idx, savedPositionFor(current()));
     try { await audio.play(); } catch (e) { $('label').textContent = 'Appuyez encore une fois'; }
   }
   function pause() { audio.pause(); }
-  var helloTimer = null;
-  function sayHello() { var h = $('hello'); h.classList.add('show'); clearTimeout(helloTimer); helloTimer = setTimeout(function () { h.classList.remove('show'); }, 10000); }
-  $('play').addEventListener('click', function () { ensureAudioGraph(); if (audio.paused) { sayHello(); play(); } else pause(); });
+
   async function go(step) {
     if (!tracks.length) return;
-    var was = !audio.paused;
+    var wasPlaying = !audio.paused;
     await loadTrack(idx + step, 0);
-    if (was) audio.play().catch(function () {});
+    if (wasPlaying) audio.play().catch(function () {});
   }
-  $('prev').addEventListener('click', function () { go(-1); });
-  $('nextMain').addEventListener('click', function () { go(1); });
 
-  audio.addEventListener('play', function () { render(); keepAwake(true); });
+  function render() {
+    var has = tracks.length > 0, playing = !audio.paused;
+    $('play').disabled = !has;
+    $('prev').disabled = $('next').disabled = tracks.length < 2;
+    $('icoPlay').hidden = playing;
+    $('icoPause').hidden = !playing;
+    $('playWord').textContent = playing ? 'Pause' : 'Écouter';
+    $('play').setAttribute('aria-label', playing ? 'Pause' : 'Écouter');
+    document.body.classList.toggle('playing', playing);
+
+    if (!has) { $('label').textContent = 'Rien à écouter pour le moment'; $('title').textContent = ''; return; }
+    $('label').textContent = playing ? 'En écoute' : (apNote ? 'André-Pierre a ajouté un nouvel élément' : 'Appuyez pour écouter');
+    $('title').textContent = pretty(current().name);
+  }
+
+  function showTime() {
+    var d = duration();
+    $('tCur').textContent = fmtTime(audio.currentTime || pendingSeek);
+    $('tDur').textContent = fmtTime(d);
+    $('seek').value = d ? Math.round(1000 * audio.currentTime / d) : 0;
+  }
+
+  $('play').addEventListener('click', function () {
+    unlockAudioGraph();
+    if (audio.paused) { sayHello(); play(); } else { pause(); }
+  });
+  $('prev').addEventListener('click', function () { go(-1); });
+  $('next').addEventListener('click', function () { go(1); });
+
+  audio.addEventListener('loadedmetadata', function () {
+    if (pendingSeek && pendingSeek < duration() - 5) { try { audio.currentTime = pendingSeek; } catch (e) {} }
+    pendingSeek = 0;
+    showTime();
+  });
+  audio.addEventListener('durationchange', showTime);
+  audio.addEventListener('play', function () { apNote = false; render(); keepAwake(true); });
+  audio.addEventListener('playing', function () { errorsInRow = 0; });
   audio.addEventListener('pause', function () { render(); saveState(); keepAwake(false); });
   audio.addEventListener('ended', async function () { await loadTrack(idx + 1, 0); audio.play().catch(function () {}); });
-  var last = 0;
+  audio.addEventListener('error', async function () {
+    // Un fichier illisible : on passe au suivant, sans tourner en rond.
+    if (!hasSource() || tracks.length < 2 || ++errorsInRow >= tracks.length) return;
+    await loadTrack(idx + 1, 0);
+    audio.play().catch(function () {});
+  });
+  var lastSave = 0;
   audio.addEventListener('timeupdate', function () {
     if (!seeking) showTime();
-    var now = Date.now(); if (now - last > 5000) { last = now; saveState(); }
+    var now = Date.now();
+    if (now - lastSave > 5000) { lastSave = now; saveState(); }
   });
   window.addEventListener('pagehide', saveState);
-  document.addEventListener('visibilitychange', function () { if (document.hidden) saveState(); else if (!audio.paused) keepAwake(true); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) saveState();
+    else if (!audio.paused) keepAwake(true);
+  });
 
-  async function keepAwake(on) {
+  // Curseur de lecture
+  $('seek').addEventListener('input', function () {
+    seeking = true;
+    var d = duration();
+    if (d) $('tCur').textContent = fmtTime(d * $('seek').value / 1000);
+  });
+  $('seek').addEventListener('change', async function () {
+    if (!hasSource() && tracks.length) {
+      await loadTrack(idx, 0);
+      await new Promise(function (r) { audio.addEventListener('loadedmetadata', r, { once: true }); });
+    }
+    var d = duration();
+    if (d) { try { audio.currentTime = d * $('seek').value / 1000; } catch (e) {} }
+    seeking = false;
+    saveState(); showTime();
+  });
+
+  // Écran allumé pendant l'écoute (quand l'appareil le permet)
+  var wakeLock = null;
+  async function keepAwake(wanted) {
     try {
-      if (on && 'wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', function () { wakeLock = null; }); }
-      if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+      if (wanted && 'wakeLock' in navigator && !wakeLock) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', function () { wakeLock = null; });
+      }
+      if (!wanted && wakeLock) { await wakeLock.release(); wakeLock = null; }
     } catch (e) { wakeLock = null; }
   }
-  function setMediaSession() {
-    if (!('mediaSession' in navigator) || !tracks[idx]) return;
-    try {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: pretty(tracks[idx].name), artist: 'Radio Maman' });
-      navigator.mediaSession.setActionHandler('play', play);
-      navigator.mediaSession.setActionHandler('pause', pause);
-      navigator.mediaSession.setActionHandler('nexttrack', function () { go(1); });
-      navigator.mediaSession.setActionHandler('previoustrack', function () { go(-1); });
-    } catch (e) {}
-  }
 
-  // ---------- Volume et clarté ----------
-  var VOL_MAX = 10, DIM_MAX = 6;
-  var settings = (function () { try { return JSON.parse(localStorage.getItem('radio-reglages') || '{}'); } catch (e) { return {}; } })();
-  var vol = typeof settings.vol === 'number' ? settings.vol : 7;
-  var lum = typeof settings.lum === 'number' ? settings.lum : DIM_MAX;
-  var actx = null, gain = null;
-  function ensureAudioGraph() {
-    if (actx) { if (actx.state !== 'running') actx.resume().catch(function () {}); return; }
+  /* =====================================================================
+     Volume et clarté
+     ===================================================================== */
+  var VOL_MAX = 10, LUM_MAX = 6;
+  var levels = prefs.get('radio-reglages', {}) || {};
+  var vol = typeof levels.vol === 'number' ? levels.vol : 7;
+  var lum = typeof levels.lum === 'number' ? levels.lum : LUM_MAX;
+  var audioCtx = null, gain = null;
+
+  // Sur iPad, audio.volume est bloqué : on passe par Web Audio, démarré au premier toucher.
+  function unlockAudioGraph() {
+    if (audioCtx) { if (audioCtx.state !== 'running' && audioCtx.resume) audioCtx.resume().catch(function () {}); return; }
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     try {
-      actx = new AC();
-      var src = actx.createMediaElementSource(audio);
-      gain = actx.createGain();
-      src.connect(gain); gain.connect(actx.destination);
-      applyVol();
-      if (actx.resume) actx.resume().catch(function () {});
-    } catch (e) { actx = null; gain = null; }
+      audioCtx = new AC();
+      var src = audioCtx.createMediaElementSource(audio);
+      gain = audioCtx.createGain();
+      src.connect(gain);
+      gain.connect(audioCtx.destination);
+      applyVolume();
+      if (audioCtx.resume) audioCtx.resume().catch(function () {});
+    } catch (e) { audioCtx = null; gain = null; }
   }
-  function applyVol() { var v = vol / VOL_MAX; if (gain) gain.gain.value = v * v; else { try { audio.volume = v; } catch (e) {} } }
-  function saveSettings() { try { localStorage.setItem('radio-reglages', JSON.stringify({ vol: vol, lum: lum })); } catch (e) {} }
-  function meter(el, n, max) { el.innerHTML = ''; for (var i = 1; i <= max; i++) { var b = document.createElement('i'); b.style.height = (30 + i * (70 / max)) + '%'; if (i <= n) b.className = 'on'; el.appendChild(b); } }
-  function applyLum() { $('dim').style.opacity = String((DIM_MAX - lum) * 0.14); }
-  function renderCtl() {
-    meter($('volMeter'), vol, VOL_MAX); meter($('dimMeter'), lum, DIM_MAX);
-    $('volDown').disabled = vol <= 0; $('volUp').disabled = vol >= VOL_MAX;
-    $('dimDown').disabled = lum <= 1; $('dimUp').disabled = lum >= DIM_MAX;
+  function applyVolume() {
+    var v = vol / VOL_MAX;
+    if (gain) gain.gain.value = v * v;
+    else { try { audio.volume = v; } catch (e) {} }
   }
-  $('volDown').addEventListener('click', function () { ensureAudioGraph(); vol = Math.max(0, vol - 1); applyVol(); renderCtl(); saveSettings(); });
-  $('volUp').addEventListener('click', function () { ensureAudioGraph(); vol = Math.min(VOL_MAX, vol + 1); applyVol(); renderCtl(); saveSettings(); });
-  $('dimDown').addEventListener('click', function () { lum = Math.max(1, lum - 1); applyLum(); renderCtl(); saveSettings(); });
-  $('dimUp').addEventListener('click', function () { lum = Math.min(DIM_MAX, lum + 1); applyLum(); renderCtl(); saveSettings(); });
-  applyVol(); applyLum(); renderCtl();
+  function applyClarity() { $('dim').style.opacity = String((LUM_MAX - lum) * 0.14); }
+  function drawMeter(el, n, max) {
+    el.innerHTML = '';
+    for (var i = 1; i <= max; i++) {
+      var bar = document.createElement('i');
+      bar.style.height = (30 + i * (70 / max)) + '%';
+      if (i <= n) bar.className = 'on';
+      el.appendChild(bar);
+    }
+  }
+  function renderLevels() {
+    drawMeter($('volMeter'), vol, VOL_MAX);
+    drawMeter($('dimMeter'), lum, LUM_MAX);
+    $('volDown').disabled = vol <= 0;  $('volUp').disabled = vol >= VOL_MAX;
+    $('dimDown').disabled = lum <= 1;  $('dimUp').disabled = lum >= LUM_MAX;
+    prefs.set('radio-reglages', { vol: vol, lum: lum });
+  }
+  $('volDown').addEventListener('click', function () { unlockAudioGraph(); vol = clamp(vol - 1, 0, VOL_MAX); applyVolume(); renderLevels(); });
+  $('volUp').addEventListener('click', function () { unlockAudioGraph(); vol = clamp(vol + 1, 0, VOL_MAX); applyVolume(); renderLevels(); });
+  $('dimDown').addEventListener('click', function () { lum = clamp(lum - 1, 1, LUM_MAX); applyClarity(); renderLevels(); });
+  $('dimUp').addEventListener('click', function () { lum = clamp(lum + 1, 1, LUM_MAX); applyClarity(); renderLevels(); });
+  applyVolume(); applyClarity(); renderLevels();
 
-  // ---------- Réglages (appui long 3 s sur l'heure) ----------
-  var pressTimer = null, clock = $('clock');
-  function startPress(e) { clearTimeout(pressTimer); pressTimer = setTimeout(openPanel, 3000); }
-  function endPress() { clearTimeout(pressTimer); }
-  clock.addEventListener('touchstart', startPress, { passive: true });
-  clock.addEventListener('mousedown', startPress);
-  ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(function (ev) { clock.addEventListener(ev, endPress); });
-  clock.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-  function openPanel() { $('confirm').hidden = true; $('msg').textContent = ''; renderPanel(); markHave(); $('panel').hidden = false; }
-  $('close').addEventListener('click', function () { $('panel').hidden = true; render(); });
+  ['play', 'prev', 'next', 'volDown', 'volUp', 'dimDown', 'dimUp'].forEach(function (id) { pressable($(id)); });
 
-  async function afterChange(keepId) {
-    await loadMeta();
-    if (keepId != null) { var f = tracks.findIndex(function (t) { return t.id === keepId; }); idx = f >= 0 ? f : Math.min(idx, Math.max(0, tracks.length - 1)); }
-    renderPanel(); render(); markHave();
+  /* =====================================================================
+     Ambiances : cadenas + molette
+     ===================================================================== */
+  var THEMES = [
+    { id: 'ambre',   name: 'Ambre',   swatch: '#b88550', bg: '#221c16', angle: -60 },
+    { id: 'sauge',   name: 'Sauge',   swatch: '#8f9f72', bg: '#1b201b', angle: 0 },
+    { id: 'ardoise', name: 'Ardoise', swatch: '#7f8fb0', bg: '#1a1d24', angle: 60 }
+  ];
+  var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(prefs.get('radio-theme', 'ambre')));
+  var lockBtn = $('lock'), sheet = $('sheet'), knob = $('knob'), knobSvg = $('knobSvg');
+  var dots = [], sheetTimer = null;
+
+  function applyTheme(i, save) {
+    themeIdx = i;
+    var t = THEMES[i];
+    if (t.id === 'ambre') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t.id);
+    $('themeColor').setAttribute('content', t.bg);
+    dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+    $('tname').textContent = t.name;
+    if (save) prefs.set('radio-theme', t.id);
   }
+  function setKnob(angle) {
+    var tr = 'rotate(' + angle + 'deg)';
+    knobSvg.style.webkitTransform = tr;
+    knobSvg.style.transform = tr;
+  }
+  function nearestTheme(angle) {
+    var best = 0;
+    THEMES.forEach(function (t, i) { if (Math.abs(t.angle - angle) < Math.abs(THEMES[best].angle - angle)) best = i; });
+    return best;
+  }
+
+  // Dessin de la molette : graduations et pastilles de couleur
+  (function buildDial() {
+    var ticks = $('ticks'), ns = 'http://www.w3.org/2000/svg';
+    for (var a = 0; a < 360; a += 15) {
+      var rad = a * Math.PI / 180, l = document.createElementNS(ns, 'line');
+      l.setAttribute('class', 'tick');
+      l.setAttribute('x1', 50 + 40 * Math.sin(rad)); l.setAttribute('y1', 50 - 40 * Math.cos(rad));
+      l.setAttribute('x2', 50 + 45 * Math.sin(rad)); l.setAttribute('y2', 50 - 45 * Math.cos(rad));
+      ticks.appendChild(l);
+    }
+    // Centre de la molette à (28 ; 30) vmin dans la zone ; pastilles sur un arc de 21 vmin.
+    THEMES.forEach(function (t, i) {
+      var rad = t.angle * Math.PI / 180, d = document.createElement('button');
+      d.type = 'button';
+      d.className = 'dot';
+      d.setAttribute('aria-label', 'Ambiance ' + t.name);
+      d.style.background = t.swatch;
+      d.style.left = (28 + 21 * Math.sin(rad)) + 'vmin';
+      d.style.top = (30 - 21 * Math.cos(rad)) + 'vmin';
+      d.addEventListener('click', function () { applyTheme(i, true); setKnob(t.angle); keepSheetOpen(); });
+      $('dial').appendChild(d);
+      dots.push(d);
+    });
+  })();
+
+  function openSheet() {
+    lockBtn.classList.remove('holding');
+    lockBtn.classList.add('open');
+    sheet.hidden = false;
+    void sheet.offsetWidth;            // relance la transition
+    sheet.classList.add('show');
+    applyTheme(themeIdx, false);
+    setKnob(THEMES[themeIdx].angle);
+    keepSheetOpen();
+  }
+  function closeSheet() {
+    clearTimeout(sheetTimer);
+    sheet.classList.remove('show');
+    lockBtn.classList.remove('open');
+    setTimeout(function () { if (!sheet.classList.contains('show')) sheet.hidden = true; }, 350);
+  }
+  // Se referme tout seul après 20 secondes sans toucher.
+  function keepSheetOpen() { clearTimeout(sheetTimer); sheetTimer = setTimeout(closeSheet, 20000); }
+
+  holdable(lockBtn, 1500,
+    function () { lockBtn.classList.add('holding'); },
+    openSheet,
+    function () { lockBtn.classList.remove('holding'); });
+  $('sheetClose').addEventListener('click', closeSheet);
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
+
+  // Tourner la molette au doigt ; un simple toucher passe à l'ambiance suivante.
+  var drag = null;
+  function pointOf(e) {
+    var p = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+    return { x: p.clientX, y: p.clientY };
+  }
+  function angleOf(e) {
+    var r = knob.getBoundingClientRect(), p = pointOf(e);
+    return Math.atan2(p.x - (r.left + r.width / 2), (r.top + r.height / 2) - p.y) * 180 / Math.PI;
+  }
+  function dragStart(e) {
+    drag = { a0: angleOf(e), r0: THEMES[themeIdx].angle, r: THEMES[themeIdx].angle, moved: false };
+    knob.classList.add('dragging');
+    keepSheetOpen();
+  }
+  function dragMove(e) {
+    if (!drag) return;
+    if (e.cancelable) e.preventDefault();
+    var d = angleOf(e) - drag.a0;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    if (Math.abs(d) > 6) drag.moved = true;
+    drag.r = clamp(drag.r0 + d, -80, 80);
+    setKnob(drag.r);
+    var n = nearestTheme(drag.r);
+    if (n !== themeIdx) applyTheme(n, false);
+  }
+  function dragEnd() {
+    if (!drag) return;
+    knob.classList.remove('dragging');
+    var n = drag.moved ? nearestTheme(drag.r) : (themeIdx + 1) % THEMES.length;
+    drag = null;
+    applyTheme(n, true);
+    setKnob(THEMES[n].angle);
+    keepSheetOpen();
+  }
+  knob.addEventListener('touchstart', dragStart, { passive: true });
+  knob.addEventListener('touchmove', dragMove, { passive: false });
+  on(knob, 'touchend touchcancel', dragEnd);
+  knob.addEventListener('mousedown', dragStart);
+  window.addEventListener('mousemove', dragMove);
+  window.addEventListener('mouseup', dragEnd);
+
+  applyTheme(themeIdx, false);
+
+  /* =====================================================================
+     Réglages de la famille
+     ===================================================================== */
+  holdable($('clock'), 3000, null, openPanel, null);
+  $('panelClose').addEventListener('click', function () { $('panel').hidden = true; render(); });
+
+  function openPanel() {
+    $('confirm').hidden = true;
+    $('msg').textContent = '';
+    renderPanel();
+    markDownloaded();
+    $('panel').hidden = false;
+  }
+
+  function renderPanel() {
+    var total = tracks.reduce(function (s, t) { return s + (t.size || 0); }, 0);
+    $('stats').textContent = tracks.length
+      ? tracks.length + ' épisode' + (tracks.length > 1 ? 's' : '') + ' · ' + fmtMo(total)
+      : 'Aucun épisode pour le moment.';
+    var ol = $('list');
+    ol.innerHTML = '';
+    tracks.forEach(function (t, i) {
+      var li = document.createElement('li'), span = document.createElement('span'), rm = document.createElement('button');
+      if (i === idx) li.className = 'cur';
+      span.textContent = pretty(t.name);
+      rm.type = 'button'; rm.className = 'rm'; rm.textContent = 'Retirer';
+      rm.addEventListener('click', function () { removeOne(t.id); });
+      li.appendChild(span); li.appendChild(rm); ol.appendChild(li);
+    });
+    if (navigator.storage && navigator.storage.estimate) {
+      navigator.storage.estimate().then(function (e) {
+        if (e && e.quota) $('stats').textContent += ' · place ≈ ' + (e.quota / 1073741824).toFixed(1) + ' Go';
+      }).catch(function () {});
+    }
+  }
+
+  async function afterLibraryChange(keepId) {
+    await reloadTracks(keepId);
+    renderPanel(); render(); markDownloaded();
+  }
+
   async function removeOne(id) {
-    var cur = tracks[idx] ? tracks[idx].id : null;
-    if (id === cur) { audio.pause(); audio.removeAttribute('src'); try { audio.load(); } catch (e) {} }
-    await removeTrack(id);
-    await afterChange(id === cur ? null : cur);
+    var c = current(), isCurrent = !!c && c.id === id;
+    if (isCurrent) clearSource();
+    await deleteTrack(id);
+    await afterLibraryChange(isCurrent || !c ? null : c.id);
   }
 
   $('files').addEventListener('change', async function (e) {
-    var files = Array.prototype.slice.call(e.target.files); e.target.value = '';
+    var files = Array.prototype.slice.call(e.target.files);
+    e.target.value = '';
     if (!files.length) return;
     files.sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); });
-    var cur = tracks[idx] ? tracks[idx].id : null, ok = 0, base = Date.now();
+    var keep = current() ? current().id : null, ok = 0, base = Date.now();
     for (var i = 0; i < files.length; i++) {
       $('msg').textContent = 'Import ' + (i + 1) + ' / ' + files.length + '…';
       try { await saveAudio({ name: files[i].name, size: files[i].size, order: base + i }, files[i], files[i].type); ok++; }
       catch (err) { $('msg').textContent = 'Arrêt : impossible d\'enregistrer « ' + files[i].name + ' » (place insuffisante ?).'; break; }
     }
     if (ok === files.length) $('msg').textContent = ok + ' fichier' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '.';
-    await afterChange(cur);
+    await afterLibraryChange(keep);
   });
-  $('restart').addEventListener('click', async function () { var was = !audio.paused; await loadTrack(0, 0); if (was) audio.play().catch(function () {}); renderPanel(); });
+
+  $('restart').addEventListener('click', async function () {
+    var wasPlaying = !audio.paused;
+    await loadTrack(0, 0);
+    if (wasPlaying) audio.play().catch(function () {});
+    renderPanel();
+  });
   $('clear').addEventListener('click', function () { $('confirm').hidden = false; });
   $('clearNo').addEventListener('click', function () { $('confirm').hidden = true; });
   $('clearYes').addEventListener('click', async function () {
-    audio.pause(); audio.removeAttribute('src'); try { audio.load(); } catch (e) {}
-    await clearAll();
-    try { localStorage.removeItem('radio-state'); } catch (e) {}
-    idx = 0; $('confirm').hidden = true; $('msg').textContent = 'Tout est supprimé.';
-    await afterChange(null);
+    clearSource();
+    await deleteAll();
+    prefs.set('radio-state', null);
+    idx = 0;
+    $('confirm').hidden = true;
+    $('msg').textContent = 'Tout est supprimé.';
+    await afterLibraryChange(null);
   });
 
-  // ---------- Catalogue d'émissions (flux RSS) ----------
+  /* ---------- Catalogue d'émissions (flux RSS) ---------- */
   var episodes = [];
   $('feedSel').addEventListener('change', function () { $('feedUrl').hidden = $('feedSel').value !== 'autre'; });
+
+  // Les liens Radio France passent par un redirecteur refusé par le navigateur : on vise le fichier directement.
   function directUrl(u) {
-    // Les liens Radio France passent par un redirecteur sans autorisation ; on va directement au fichier.
     var m = /^https?:\/\/proxycast\.radiofrance\.fr\/.*\/([^\/?#]+\.(mp3|m4a))/i.exec(u);
     return m ? 'https://media.radiofrance-podcast.net/podcast09/' + m[1] : u;
   }
   function textOf(el, tag) { var x = el.getElementsByTagName(tag)[0]; return x ? x.textContent.trim() : ''; }
-  function shortDur(d) {
+  function shortDuration(d) {
     if (!d) return '';
-    var p = d.split(':').map(Number), s = 0; p.forEach(function (n) { s = s * 60 + (n || 0); });
-    var m = Math.round(s / 60); return m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60 < 10 ? '0' : '') + (m % 60) : m + ' min';
+    var s = 0;
+    d.split(':').forEach(function (n) { s = s * 60 + (Number(n) || 0); });
+    var m = Math.round(s / 60);
+    return m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60 < 10 ? '0' : '') + (m % 60) : m + ' min';
   }
-  function markHave() {
-    var have = {}; tracks.forEach(function (t) { if (t.src) have[t.src] = true; });
+  function markDownloaded() {
+    var have = {};
+    tracks.forEach(function (t) { if (t.src) have[t.src] = true; });
     Array.prototype.forEach.call(document.querySelectorAll('.ep'), function (row) {
-      var on = !!have[row.getAttribute('data-src')];
-      row.classList.toggle('have', on);
-      var d = row.querySelector('.d'); d.textContent = row.getAttribute('data-dur') + (on ? ' · déjà sur l\'iPad' : '');
+      var isHere = !!have[row.getAttribute('data-src')];
+      row.classList.toggle('have', isHere);
+      row.querySelector('.d').textContent = row.getAttribute('data-dur') + (isHere ? ' · déjà sur l\'iPad' : '');
     });
   }
+
   $('loadFeed').addEventListener('click', async function () {
     var url = $('feedSel').value === 'autre' ? $('feedUrl').value.trim() : $('feedSel').value;
     if (!url) { $('feedMsg').textContent = 'Collez d\'abord l\'adresse du flux.'; return; }
-    $('feedMsg').textContent = 'Chargement de la liste…'; $('episodes').innerHTML = ''; $('dlRow').hidden = true;
+    $('feedMsg').textContent = 'Chargement de la liste…';
+    $('episodes').innerHTML = '';
+    $('dlRow').hidden = true;
     try {
       var r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       var xml = new DOMParser().parseFromString(await r.text(), 'text/xml');
-      var items = Array.prototype.slice.call(xml.getElementsByTagName('item'));
-      episodes = items.map(function (it) {
+      episodes = Array.prototype.slice.call(xml.getElementsByTagName('item')).map(function (it) {
         var enc = it.getElementsByTagName('enclosure')[0];
-        return { title: textOf(it, 'title'), src: enc ? enc.getAttribute('url') : '', dur: shortDur(textOf(it, 'itunes:duration')) };
-      }).filter(function (e) { return e.src && !/^Retrouvez|^Découvrez/i.test(e.title); });
+        return { title: textOf(it, 'title'), src: enc ? enc.getAttribute('url') : '', dur: shortDuration(textOf(it, 'itunes:duration')) };
+      }).filter(function (ep) { return ep.src && !/^(Retrouvez|Découvrez)/i.test(ep.title); });
       if (!episodes.length) throw new Error('vide');
+
       var box = $('episodes');
       episodes.forEach(function (ep, i) {
-        var lab = document.createElement('label'); lab.className = 'ep';
-        lab.setAttribute('data-src', directUrl(ep.src)); lab.setAttribute('data-dur', ep.dur);
-        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = String(i);
-        var t = document.createElement('span'); t.className = 't'; t.textContent = ep.title;
-        var d = document.createElement('span'); d.className = 'd'; t.appendChild(d);
-        lab.appendChild(cb); lab.appendChild(t); box.appendChild(lab);
+        var row = document.createElement('label'), cb = document.createElement('input'),
+            t = document.createElement('span'), d = document.createElement('span');
+        row.className = 'ep';
+        row.setAttribute('data-src', directUrl(ep.src));
+        row.setAttribute('data-dur', ep.dur);
+        cb.type = 'checkbox'; cb.value = String(i);
+        t.className = 't'; t.textContent = ep.title;
+        d.className = 'd';
+        t.appendChild(d); row.appendChild(cb); row.appendChild(t); box.appendChild(row);
       });
-      markHave();
+      markDownloaded();
       $('feedMsg').textContent = episodes.length + ' épisodes. Cochez ceux à garder.';
       $('dlRow').hidden = false;
     } catch (e) {
       $('feedMsg').textContent = 'Impossible de charger cette émission. Vérifiez la connexion internet ou l\'adresse.';
     }
   });
+
   $('dlSel').addEventListener('click', async function () {
-    var picks = Array.prototype.slice.call(document.querySelectorAll('.ep input:checked')).map(function (c) { return episodes[Number(c.value)]; });
+    var picks = Array.prototype.slice.call(document.querySelectorAll('.ep input:checked'))
+      .map(function (c) { return episodes[Number(c.value)]; });
     if (!picks.length) { $('feedMsg').textContent = 'Cochez au moins un épisode.'; return; }
     $('dlSel').disabled = true;
-    var cur = tracks[idx] ? tracks[idx].id : null, ok = 0, base = Date.now();
+    var keep = current() ? current().id : null, ok = 0, base = Date.now();
     for (var i = 0; i < picks.length; i++) {
       var ep = picks[i], url = directUrl(ep.src);
       $('feedMsg').textContent = 'Téléchargement ' + (i + 1) + ' / ' + picks.length + ' : ' + ep.title + '… (ne fermez pas)';
@@ -599,8 +1005,7 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
         var type = r.headers.get('content-type') || (/\.m4a/i.test(url) ? 'audio/mp4' : 'audio/mpeg');
         var data;
         try { data = await r.blob(); } catch (e2) { data = await r.arrayBuffer(); }
-        var size = data.size || data.byteLength || 0;
-        await saveAudio({ name: ep.title, size: size, order: base + i, src: url }, data, type);
+        await saveAudio({ name: ep.title, size: data.size || data.byteLength || 0, order: base + i, src: url }, data, type);
         ok++;
       } catch (e) {
         $('feedMsg').textContent = 'Arrêt sur « ' + ep.title + ' » : téléchargement ou enregistrement impossible (place insuffisante ?). ' + ok + ' épisode(s) ajouté(s).';
@@ -610,95 +1015,83 @@ body.playing #play.pressed, body.playing #play:active { background: #8a6640; }
     if (ok === picks.length) $('feedMsg').textContent = ok + ' épisode' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '. Ils sont à la fin de la liste.';
     Array.prototype.forEach.call(document.querySelectorAll('.ep input:checked'), function (c) { c.checked = false; });
     $('dlSel').disabled = false;
-    await afterChange(cur);
+    await afterLibraryChange(keep);
   });
 
-  // ---------- Curseur de lecture ----------
-  var seeking = false;
-  function fmt(t) { t = Math.max(0, Math.floor(t || 0)); var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (sec < 10 ? '0' : '') + sec; }
-  function showTime() {
-    var d = audio.duration && isFinite(audio.duration) ? audio.duration : 0;
-    $('tCur').textContent = fmt(audio.currentTime); $('tDur').textContent = fmt(d);
-    $('seek').value = d ? Math.round(1000 * audio.currentTime / d) : 0;
-  }
-  $('seek').addEventListener('input', function () {
-    seeking = true;
-    var d = audio.duration && isFinite(audio.duration) ? audio.duration : 0;
-    if (d) $('tCur').textContent = fmt(d * $('seek').value / 1000);
-  });
-  $('seek').addEventListener('change', async function () {
-    if (!audio.src || audio.src === location.href) { await loadTrack(idx, 0); await new Promise(function (r) { audio.addEventListener('loadedmetadata', r, { once: true }); }); }
-    var d = audio.duration && isFinite(audio.duration) ? audio.duration : 0;
-    if (d) { try { audio.currentTime = d * $('seek').value / 1000; } catch (e) {} }
-    seeking = false; saveState(); showTime();
-  });
-  audio.addEventListener('loadedmetadata', showTime);
-  audio.addEventListener('durationchange', showTime);
-
-  // Réaction immédiate au toucher
-  ['play', 'prev', 'nextMain', 'volDown', 'volUp', 'dimDown', 'dimUp'].forEach(function (id) {
-    var el = $(id);
-    el.addEventListener('touchstart', function () { if (!el.disabled) el.classList.add('pressed'); }, { passive: true });
-    ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(function (ev) { el.addEventListener(ev, function () { setTimeout(function () { el.classList.remove('pressed'); }, 90); }); });
-  });
-  document.addEventListener('touchstart', function () {}, { passive: true });
-
-  // ---------- Dossier AP : messages de la famille, téléchargés automatiquement ----------
-  function showApNote() { apNote = true; if (audio.paused) $('label').textContent = 'André-Pierre a ajouté un nouvel élément'; }
-  audio.addEventListener('play', function () { apNote = false; });
+  /* =====================================================================
+     Dossier AP : nouveautés déposées par André-Pierre, téléchargées en silence
+     ===================================================================== */
   var AP_API = 'https://api.github.com/repos/Andre-PierreB/radio-maman/contents/AP';
   var apBusy = false;
+
   async function checkAP() {
-    if (apBusy || !db) return; apBusy = true;
+    if (apBusy || !db) return;
+    apBusy = true;
     try {
       var r = await fetch(AP_API + '?t=' + Date.now(), { headers: { Accept: 'application/vnd.github.v3+json' } });
       if (!r.ok) return;
       var list = await r.json();
       if (!Array.isArray(list)) return;
-      var files = list.filter(function (f) { return f.type === 'file' && /\.(mp3|m4a|aac|wav)$/i.test(f.name); });
-      files.sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); });
-      var have = {}; tracks.forEach(function (t) { if (t.src) have[t.src] = true; });
-      var fresh = files.filter(function (f) { return !have['AP/' + f.name]; });
+
+      var have = {};
+      tracks.forEach(function (t) { if (t.src) have[t.src] = true; });
+      var fresh = list
+        .filter(function (f) { return f.type === 'file' && /\.(mp3|m4a|aac|wav)$/i.test(f.name) && !have['AP/' + f.name]; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name, 'fr', { numeric: true }); });
       if (!fresh.length) return;
-      var cur = tracks[idx] ? tracks[idx].id : null;
-      // Les nouveaux messages passent juste après l'épisode en cours
-      var after = tracks[idx] ? (tracks[idx].order || tracks[idx].id) : Date.now();
-      var nextT = tracks[idx + 1] ? (tracks[idx + 1].order || tracks[idx + 1].id) : after + 1;
+
+      // Les nouveautés passent juste après l'épisode en cours.
+      var c = current(), keep = c ? c.id : null;
+      var after = c ? (c.order || c.id) : Date.now();
+      var nxt = tracks[idx + 1];
+      var before = nxt ? (nxt.order || nxt.id) : after + 1;
       for (var i = 0; i < fresh.length; i++) {
         var f = fresh[i];
         var resp = await fetch('AP/' + encodeURIComponent(f.name) + '?t=' + Date.now());
         if (!resp.ok) continue;
         var type = resp.headers.get('content-type') || 'audio/mpeg';
-        var data; try { data = await resp.blob(); } catch (e2) { data = await resp.arrayBuffer(); }
-        var ord = after + (nextT - after) * (i + 1) / (fresh.length + 1);
-        await saveAudio({ name: f.name, size: data.size || data.byteLength || 0, order: ord, src: 'AP/' + f.name, ap: true }, data, type);
+        var data;
+        try { data = await resp.blob(); } catch (e2) { data = await resp.arrayBuffer(); }
+        var order = after + (before - after) * (i + 1) / (fresh.length + 1);
+        await saveAudio({ name: f.name, size: data.size || data.byteLength || 0, order: order, src: 'AP/' + f.name, ap: true }, data, type);
       }
-      await afterChange(cur);
-      showApNote();
-    } catch (e) { /* hors ligne : on réessaiera plus tard */ }
-    finally { apBusy = false; }
+      await afterLibraryChange(keep);
+      apNote = true;
+      render();
+    } catch (e) {
+      // Hors ligne : on réessaiera plus tard.
+    } finally {
+      apBusy = false;
+    }
   }
   setInterval(checkAP, 3 * 3600 * 1000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) checkAP(); });
 
-  // ---------- Démarrage ----------
-  (async function () {
+  /* =====================================================================
+     Démarrage
+     ===================================================================== */
+  (async function boot() {
     try {
       if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
       db = await openDB();
-      await loadMeta();
-      var st = readState();
-      if (st) { var i = tracks.findIndex(function (t) { return t.id === st.id; }); if (i >= 0) idx = i; }
-      if (tracks.length) { await loadTrack(idx, st && tracks[idx] && tracks[idx].id === st.id ? st.t : 0); }
+      tracks = await readAllMeta();
+      var st = prefs.get('radio-state', null);
+      if (st) {
+        var i = tracks.findIndex(function (t) { return t.id === st.id; });
+        if (i >= 0) idx = i;
+      }
+      if (tracks.length) await loadTrack(idx, savedPositionFor(current()));
     } catch (e) {
       $('label').textContent = 'Stockage indisponible sur cet appareil';
     }
     render();
     checkAP();
   })();
-  if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {} }
+
+  if ('serviceWorker' in navigator) {
+    try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
+  }
 })();
 </script>
-
 </body>
 </html>

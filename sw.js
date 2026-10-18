@@ -1,6 +1,6 @@
 // Radio Maman : garde l'appli disponible sans internet.
 // Avec internet, on prend toujours la dernière version ; sans, on sert la copie gardée.
-var CACHE = 'radio-maman-v1';
+var CACHE = 'radio-maman-v2';
 var SHELL = ['./', './index.html', './icon-180.png'];
 
 self.addEventListener('install', function (e) {
