@@ -7,14 +7,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Radio Maman">
-<meta name="theme-color" id="themeColor" content="#1b201b">
+<meta name="theme-color" id="themeColor" content="#16181b">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <script>
   // Applique l'ambiance choisie avant l'affichage, pour éviter un flash de couleur.
-  try { if (JSON.parse(localStorage.getItem('radio-theme') || '"sauge"') === 'ambre') document.documentElement.setAttribute('data-theme', 'ambre'); } catch (e) {}
+  try { var t = JSON.parse(localStorage.getItem('radio-theme') || '"nuit"'); if (t === 'foret' || t === 'sable') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
 <style>
 /*
@@ -23,25 +23,31 @@
   Toutes les tailles sont en vmin pour suivre l'écran de l'iPad.
 */
 
-/* ---------- Ambiances (contraste volontairement bas) ----------
-   Sauge par défaut. Une seconde couleur, bleu acier doux (--accent2), relève quelques détails :
-   l'onde, « En écoute », la jauge de clarté, le contour de la source active, le cercle des réglages. */
-:root {
-  --bg: #1b201b;  --bg-2: #222922;  --line: #333d32;
-  --fg: #b9c2aa;  --strong: #b3bd9f; --muted: #7f8a72;
-  --btn: #8f9f72; --btn-ink: #333d26; --btn-on: #5d6b4a; --btn-on-ink: #c1caa8;
-  --accent: #98a878; --thumb: #9aa486; --ring: rgba(143,159,114,.15); --veil: rgba(27,32,27,.9);
-  --accent2: #7f9cab; --ring2: rgba(127,156,171,.18);
-  --danger: #b0705a;
+/* ---------- Ambiances (sombres, peu éblouissantes) ----------
+   Fond neutre presque noir ; une couleur pour l'action (bouton Écouter), une seconde (--accent2)
+   nettement différente pour ce qui est actif : l'onde, « En écoute », la clarté, la source allumée. */
+:root {   /* Nuit et sauge (par défaut) */
+  --bg: #16181b;  --bg-2: #1e2125;  --line: #2c3036;
+  --fg: #cfcdc3;  --strong: #d8d5ca; --muted: #8b9097;
+  --btn: #71876a; --btn-ink: #eef0e6; --btn-on: #2f3b2b; --btn-on-ink: #cfdcc3;
+  --accent: #9cb08a; --thumb: #a9aea8; --ring: rgba(126,148,112,.16); --veil: rgba(22,24,27,.9);
+  --accent2: #86a6c0; --ring2: rgba(134,166,192,.18);
+  --danger: #c27a64;
   --font: "Atkinson Hyperlegible", Verdana, -apple-system, sans-serif;
 }
-html[data-theme="ambre"] {
-  --bg: #221c16;  --bg-2: #2a231c;  --line: #3d3329;
-  --fg: #c8b596;  --strong: #c2ad8c; --muted: #8f7e66;
-  --btn: #b88550; --btn-ink: #5a3d22; --btn-on: #7e5c37; --btn-on-ink: #c9ad84;
-  --accent: #b98a52; --thumb: #a8916f; --ring: rgba(184,133,80,.14); --veil: rgba(34,28,22,.9);
-  --accent2: #8c9aa0; --ring2: rgba(140,154,160,.16);
-  --danger: #b0644f;
+html[data-theme="foret"] {   /* Forêt et laiton */
+  --bg: #121815;  --bg-2: #19211d;  --line: #28332d;
+  --fg: #d0cdbf;  --strong: #d9d5c5; --muted: #8a958c;
+  --btn: #9c8150; --btn-ink: #fbf3e1; --btn-on: #3a3220; --btn-on-ink: #e2cf9f;
+  --accent: #c2a46a; --thumb: #b8ad95; --ring: rgba(169,140,87,.16); --veil: rgba(18,24,21,.9);
+  --accent2: #86ab9a; --ring2: rgba(134,171,154,.18);
+}
+html[data-theme="sable"] {   /* Sauge et sable */
+  --bg: #191816;  --bg-2: #211f1c;  --line: #33302b;
+  --fg: #d4cdbf;  --strong: #dcd5c6; --muted: #948c7f;
+  --btn: #74906d; --btn-ink: #f1f0e8; --btn-on: #2f3a2c; --btn-on-ink: #cfdcc6;
+  --accent: #9fb596; --thumb: #b5ad9e; --ring: rgba(127,154,120,.16); --veil: rgba(25,24,22,.9);
+  --accent2: #c49a68; --ring2: rgba(196,154,104,.18);
 }
 
 /* ---------- Base ---------- */
@@ -159,20 +165,6 @@ body.playing .now .label { color: var(--accent2); }
 .gear svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .gear .ring { fill: none; stroke: var(--accent2); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; }
 .gear.holding .ring { stroke-dashoffset: 0; -webkit-transition: stroke-dashoffset 1.5s linear; transition: stroke-dashoffset 1.5s linear; }
-/* Le doigt cache la roue : la progression se lit aussi à sa gauche. */
-.hold-tip {
-  position: absolute; z-index: 12; pointer-events: none;
-  top: calc(3vmin + env(safe-area-inset-top, 0px)); right: calc(17vmin + env(safe-area-inset-right, 0px));
-  height: 11vmin; padding: 0 3vmin; border-radius: 5.5vmin; background: var(--bg-2); border: 3px solid var(--line);
-  color: var(--fg); font-size: 3.6vmin; font-weight: 700;
-  display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
-  opacity: 0; -webkit-transition: opacity .2s; transition: opacity .2s;
-}
-.hold-tip i { display: block; width: 16vmin; height: 1.6vmin; margin-left: 2vmin; border-radius: 1vmin; background: var(--line); overflow: hidden; }
-.hold-tip b { display: block; width: 0; height: 100%; background: var(--accent2); }
-.gear.holding + .hold-tip { opacity: 1; }
-.gear.holding + .hold-tip b { width: 100%; -webkit-transition: width 1.5s linear; transition: width 1.5s linear; }
-body.in-spot .hold-tip { display: none; }
 
 body.in-spot .gear { display: none; }
 
@@ -296,9 +288,18 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 .rm { margin-left: 10px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-size: 15px; }
 .confirm { border: 1px solid var(--danger); border-radius: 10px; padding: 16px; }
 .hint { font-size: 15px; }
-.swatch { width: 120px; padding: 12px 10px; border-radius: 12px; border: 3px solid var(--line); background: var(--bg); color: var(--fg); font-size: 17px; font-weight: 700; }
-.swatch i { display: block; height: 44px; border-radius: 8px; margin-bottom: 8px; }
-.swatch.on { border-color: var(--strong); }
+.swatch { width: 140px; padding: 8px 8px 10px; border-radius: 12px; border: 3px solid var(--line); background: var(--bg); color: var(--fg); font-size: 16px; font-weight: 700; line-height: 1.25; }
+.swatch.on { border-color: var(--accent2); }
+/* Mini aperçu de l'écran principal dans chaque ambiance */
+.mini { height: 132px; border-radius: 8px; margin-bottom: 8px; padding: 10px 6px 0; text-align: center; overflow: hidden; }
+.mini .t { font-size: 18px; font-weight: 700; line-height: 1; }
+.mini .r { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; margin-top: 8px; }
+.mini .r span { width: 28px; height: 11px; margin: 0 2px; border-radius: 3px; border: 1.5px solid; }
+.mini .p { width: 46px; height: 46px; margin: 9px auto 0; border-radius: 50%; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.mini .p b { width: 0; height: 0; margin-left: 4px; border-left: 14px solid; border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+.mini .w { height: 14px; margin-top: 7px; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.mini .w span { width: 3px; margin: 0 2px; border-radius: 2px; }
+
 
 @media (prefers-reduced-motion: reduce) {
   body, .round, .hello, .clock .date, #dim { -webkit-transition: none !important; transition: none !important; }
@@ -334,7 +335,6 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       </g>
     </svg>
   </button>
-  <div class="hold-tip" aria-hidden="true">Réglages<i><b></b></i></div>
 
   <!-- Les sources : celle qui est allumée est celle qui joue ; chacune reprend là où on l'avait laissée -->
   <div class="sources">
@@ -1053,7 +1053,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   function drawWave(levels) {
     if (!wctx) return;
     var W = wave.width, H = wave.height, step = W / BARS, w = Math.max(2, step * 0.26);
-    if (!waveColor || frame0 % 60 === 0) waveColor = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim() || '#7f9cab';
+    if (!waveColor || frame0 % 60 === 0) waveColor = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim() || '#86a6c0';
     wctx.clearRect(0, 0, W, H);
     wctx.strokeStyle = waveColor;
     wctx.lineWidth = w;
@@ -1096,26 +1096,41 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
      Couleurs de l'écran (dans les réglages de la famille)
      ===================================================================== */
   var THEMES = [
-    { id: 'sauge', name: 'Sauge', swatch: 'linear-gradient(90deg, #8f9f72 60%, #7f9cab 60%)', bg: '#1b201b' },
-    { id: 'ambre', name: 'Ambre', swatch: 'linear-gradient(90deg, #b88550 60%, #8c9aa0 60%)', bg: '#221c16' }
-  ];   // Ardoise retirée : trop éblouissante
-  var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(prefs.get('radio-theme', 'sauge')));
+    // Couleurs reprises des ambiances ci-dessus, pour dessiner les mini aperçus.
+    { id: 'nuit',  name: 'Nuit et sauge',   bg: '#16181b', bg2: '#1e2125', line: '#2c3036', strong: '#d8d5ca', btn: '#71876a', ink: '#eef0e6', on: '#2f3b2b', a2: '#86a6c0' },
+    { id: 'foret', name: 'Forêt et laiton', bg: '#121815', bg2: '#19211d', line: '#28332d', strong: '#d9d5c5', btn: '#9c8150', ink: '#fbf3e1', on: '#3a3220', a2: '#86ab9a' },
+    { id: 'sable', name: 'Sauge et sable',  bg: '#191816', bg2: '#211f1c', line: '#33302b', strong: '#dcd5c6', btn: '#74906d', ink: '#f1f0e8', on: '#2f3a2c', a2: '#c49a68' }
+  ];
+  var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(prefs.get('radio-theme', 'nuit')));
   var swatches = [];
 
   function applyTheme(i, save) {
     themeIdx = i;
     var t = THEMES[i];
-    if (t.id === 'sauge') document.documentElement.removeAttribute('data-theme');
+    if (t.id === 'nuit') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t.id);
     $('themeColor').setAttribute('content', t.bg);
     swatches.forEach(function (s, k) { s.classList.toggle('on', k === i); });
     if (save) prefs.set('radio-theme', t.id);
   }
+  // Mini aperçu : l'heure, la rangée des sources, le bouton Écouter et l'onde, dans les couleurs de l'ambiance.
+  function miniPreview(t) {
+    var m = document.createElement('div');
+    m.className = 'mini';
+    m.style.background = t.bg;
+    var html = '<div class="t" style="color:' + t.strong + '">13:55</div><div class="r">';
+    for (var k = 0; k < 3; k++) {
+      html += '<span style="background:' + (k ? t.bg2 : t.on) + ';border-color:' + (k ? t.line : t.a2) + '"></span>';
+    }
+    html += '</div><div class="p" style="background:' + t.btn + '"><b style="border-left-color:' + t.ink + '"></b></div><div class="w">';
+    [4, 8, 12, 14, 10, 7, 4].forEach(function (h) { html += '<span style="height:' + h + 'px;background:' + t.a2 + '"></span>'; });
+    m.innerHTML = html + '</div>';
+    return m;
+  }
   THEMES.forEach(function (t, i) {
-    var b = document.createElement('button'), c = document.createElement('i');
+    var b = document.createElement('button');
     b.type = 'button'; b.className = 'swatch';
-    c.style.background = t.swatch;
-    b.appendChild(c); b.appendChild(document.createTextNode(t.name));
+    b.appendChild(miniPreview(t)); b.appendChild(document.createTextNode(t.name));
     b.addEventListener('click', function () { applyTheme(i, true); });
     $('themeRow').appendChild(b);
     swatches.push(b);
@@ -1524,7 +1539,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   /* =====================================================================
      Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
      ===================================================================== */
-  var APP_VERSION = '2026-10-18k';   // à changer à chaque envoi sur GitHub
+  var APP_VERSION = '2026-10-18m';   // à changer à chaque envoi sur GitHub
   $('ver').textContent = APP_VERSION;
 
   async function checkUpdate() {
