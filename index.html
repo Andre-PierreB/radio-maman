@@ -169,18 +169,29 @@ body.playing .now .label { color: var(--accent2); }
 body.in-spot .gear { display: none; }
 
 /* ---------- Rangée des sources : celle qui est allumée est celle qui joue ---------- */
-.sources { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; margin-top: 3vmin; }
+/* Une grille à largeur fixe : les deux lignes ont les mêmes bords, à gauche comme à droite.
+   Ligne 1, à écouter : Mes émissions (la source principale, plus grande) et Spotify.
+   Ligne 2, actualité : Infos du jour et Info en continu, à parts égales. */
+.sources { width: 84vmin; max-width: 100%; margin: 3.5vmin auto 0; }
+.sgrp { display: -webkit-flex; display: flex; }
+.sgrp + .sgrp { margin-top: 2vmin; }
 .src {
-  height: 12vmin; min-width: 12vmin; margin: 0 1.2vmin; padding: 0 3vmin; border-radius: 3vmin;
+  height: 12vmin; min-width: 0; margin: 0; padding: 0 3vmin; border-radius: 3vmin;
   border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
-  font-size: 3.6vmin; font-weight: 700; line-height: 1.15; text-align: center;
+  font-size: 3.6vmin; font-weight: 700; line-height: 1.2; text-align: left;
   -webkit-transition: -webkit-transform .08s, background-color .4s, color .4s; transition: transform .08s, background-color .4s, color .4s;
 }
+.sgrp .src + .src { margin-left: 2vmin; }
 .src svg { width: 6vmin; height: 6vmin; -webkit-flex: none; flex: none; }
-.src .word { margin-left: 1.6vmin; }
+.src .word { margin-left: 2vmin; }
 .src.on { background: var(--btn-on); color: var(--btn-on-ink); border-color: var(--accent2); }
 .src.busy { -webkit-animation: breathe 1.2s ease-in-out infinite; animation: breathe 1.2s ease-in-out infinite; }
-#srcSpot { width: 12vmin; padding: 0; }
+#srcList { -webkit-flex: 1; flex: 1; height: 15vmin; border-radius: 3.5vmin; font-size: 4.2vmin; }
+#srcList svg { width: 8vmin; height: 8vmin; }
+#srcList .word { margin-left: 2.6vmin; }
+#srcSpot { width: 15vmin; height: 15vmin; padding: 0; border-radius: 3.5vmin; }
+#srcSpot svg { width: 7vmin; height: 7vmin; }
+#srcNews, #srcLive { -webkit-flex: 1; flex: 1; }
 @-webkit-keyframes breathe { 50% { opacity: .45; } }
 @keyframes breathe { 50% { opacity: .45; } }
 
@@ -190,9 +201,13 @@ body.in-spot .gear { display: none; }
 /* ---------- iPad à l'horizontale : tout doit tenir sans défiler ---------- */
 @media (orientation: landscape) {
   .clock .time { font-size: 10vmin; }
-  .sources { margin-top: 2vmin; }
-  .src { height: 10vmin; }
-  #srcSpot { width: 10vmin; }
+  .sources { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; width: auto; margin-top: 2.5vmin; }
+  .sgrp + .sgrp { margin: 0 0 0 4vmin; }
+  .src, #srcNews, #srcLive { -webkit-flex: none; flex: none; height: 11vmin; padding: 0 3.2vmin; }
+  #srcList { -webkit-flex: none; flex: none; height: 11vmin; padding: 0 3.6vmin; font-size: 3.8vmin; }
+  #srcList svg { width: 6.6vmin; height: 6.6vmin; }
+  #srcSpot { width: 11vmin; height: 11vmin; padding: 0; }
+  #srcSpot svg { width: 6vmin; height: 6vmin; }
   #play { width: 28vmin; height: 28vmin; box-shadow: 0 0 0 1.2vmin var(--ring); }
   #play svg { width: 10vmin; height: 10vmin; }
   #play .word { font-size: 4vmin; margin-top: 1vmin; }
@@ -338,30 +353,41 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 
   <!-- Les sources : celle qui est allumée est celle qui joue ; chacune reprend là où on l'avait laissée -->
   <div class="sources">
-    <button class="src flex-center" id="srcList" type="button">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <path d="M30 30 L70 12" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-        <rect x="10" y="30" width="80" height="56" rx="10" fill="none" stroke="currentColor" stroke-width="7"/>
-        <circle cx="36" cy="58" r="13" fill="none" stroke="currentColor" stroke-width="7"/>
-        <path d="M60 48 H78 M60 60 H78 M60 72 H72" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-      </svg>
-      <span class="word">Mes émissions<br>préenregistrées</span>
-    </button>
-    <button class="src flex-center" id="srcNews" type="button" aria-label="Les infos du jour">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <rect x="12" y="20" width="62" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="7"/>
-        <path d="M74 36 H86 V74 a8 8 0 0 1 -16 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
-        <rect x="24" y="32" width="38" height="12" rx="2" fill="currentColor"/>
-        <path d="M24 56 H62 M24 68 H50" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-      </svg>
-      <span class="word">Infos<br>du jour</span>
-    </button>
-    <button class="src flex-center" id="srcSpot" type="button" aria-label="Spotify">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="46" fill="currentColor"/>
-        <path d="M24 38 C42 31 62 32 78 41 M28 53 C43 47 59 48 72 55 M32 67 C44 62 56 63 66 68" fill="none" stroke="var(--bg-2)" stroke-width="7" stroke-linecap="round"/>
-      </svg>
-    </button>
+    <div class="sgrp">
+      <button class="src flex-center" id="srcList" type="button">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M30 30 L70 12" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+          <rect x="10" y="30" width="80" height="56" rx="10" fill="none" stroke="currentColor" stroke-width="7"/>
+          <circle cx="36" cy="58" r="13" fill="none" stroke="currentColor" stroke-width="7"/>
+          <path d="M60 48 H78 M60 60 H78 M60 72 H72" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+        <span class="word">Mes émissions<br>préenregistrées</span>
+      </button>
+      <button class="src flex-center" id="srcSpot" type="button" aria-label="Spotify">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="46" fill="currentColor"/>
+          <path d="M24 38 C42 31 62 32 78 41 M28 53 C43 47 59 48 72 55 M32 67 C44 62 56 63 66 68" fill="none" stroke="var(--bg-2)" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="sgrp">
+      <button class="src flex-center" id="srcNews" type="button" aria-label="Les infos du jour">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <rect x="12" y="20" width="62" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="7"/>
+          <path d="M74 36 H86 V74 a8 8 0 0 1 -16 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
+          <rect x="24" y="32" width="38" height="12" rx="2" fill="currentColor"/>
+          <path d="M24 56 H62 M24 68 H50" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+        <span class="word">Infos<br>du jour</span>
+      </button>
+      <button class="src flex-center" id="srcLive" type="button" aria-label="L'info en continu, en direct">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="9" fill="currentColor"/>
+          <path d="M33 33 a24 24 0 0 0 0 34 M67 33 a24 24 0 0 1 0 34 M21 21 a41 41 0 0 0 0 58 M79 21 a41 41 0 0 1 0 58" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+        <span class="word">Info en<br>continu</span>
+      </button>
+    </div>
   </div>
 
   <div class="center flex-center">
@@ -508,7 +534,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   </div>
 </div>
 
-<audio id="audio" preload="auto"></audio>
+<audio id="audio" preload="auto" crossorigin="anonymous"></audio>
 
 <script>
 (function () {
@@ -678,14 +704,19 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
      ===================================================================== */
   var tracks = [], idx = 0, objectUrl = null, pendingSeek = 0, seeking = false, apNote = false, errorsInRow = 0;
   var newsMode = false, newsName = '', newsSrc = '';   // les infos se jouent à part, sans toucher à la liste
+  var liveMode = false;                                 // l'info en continu : un direct, sans position à garder
+  var srcKind = 'list';                                 // ce que le lecteur contient vraiment : 'list', 'news' ou 'live'
+  var LIVE_URL = 'https://icecast.radiofrance.fr/franceinfo-midfi.mp3';   // franceinfo, flux officiel de Radio France
 
   function current() { return tracks[idx] || null; }
   function hasSource() { return !!audio.getAttribute('src'); }
   function duration() { return audio.duration && isFinite(audio.duration) ? audio.duration : 0; }
 
   function saveState() {
-    // Chaque source garde sa propre position : les infos d'un côté, les émissions de l'autre.
-    if (newsMode) { prefs.set('radio-news', { src: newsSrc, t: audio.currentTime || pendingSeek || 0 }); return; }
+    // Chaque source garde sa propre position, d'après ce que le lecteur contient vraiment :
+    // l'événement « pause » peut arriver juste après un changement de source.
+    if (srcKind === 'live') return;
+    if (srcKind === 'news') { prefs.set('radio-news', { src: newsSrc, t: audio.currentTime || pendingSeek || 0 }); return; }
     var c = current();
     prefs.set('radio-state', { id: c ? c.id : null, t: audio.currentTime || pendingSeek || 0 });
   }
@@ -716,7 +747,8 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     render(); showTime(); saveState();
     return true;
   }
-  function setSource(blob, seekTo) {
+  function setSource(blob, seekTo, kind) {
+    srcKind = kind || 'list';
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = URL.createObjectURL(blob);
     pendingSeek = seekTo || 0;
@@ -737,6 +769,14 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   function rewindFor() { return pausedAt && Date.now() - pausedAt < 60000 ? 5 : 10; }
 
   async function play() {
+    if (liveMode) {
+      // Un direct reprend toujours « maintenant » : on recharge le flux plutôt que de rejouer ce qui était en mémoire.
+      pendingSeek = 0;
+      srcKind = 'live';
+      audio.src = LIVE_URL + '?t=' + Date.now();
+      try { await audio.play(); } catch (e) { $('label').textContent = 'Appuyez encore une fois'; }
+      return;
+    }
     if (!tracks.length && !newsMode) return;
     var back = rewindFor();
     if (!hasSource()) {
@@ -753,18 +793,20 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 
   async function go(step) {
     var wasPlaying = !audio.paused;
-    if (newsMode) return;                 // précédent / suivant ne concernent que les émissions
+    if (newsMode || liveMode) return;     // précédent / suivant ne concernent que les émissions
     if (!tracks.length) return;
     await loadTrack(idx + step, 0);
     if (wasPlaying) audio.play().catch(function () {});
   }
 
   function render() {
-    var has = tracks.length > 0 || newsMode, playing = !audio.paused;
+    var has = tracks.length > 0 || newsMode || liveMode, playing = !audio.paused;
     $('play').disabled = !has;
-    $('prev').disabled = $('next').disabled = newsMode || tracks.length < 2;
-    $('srcList').classList.toggle('on', !newsMode && tracks.length > 0);
+    $('prev').disabled = $('next').disabled = newsMode || liveMode || tracks.length < 2;
+    $('seek').disabled = liveMode;
+    $('srcList').classList.toggle('on', !newsMode && !liveMode && tracks.length > 0);
     $('srcNews').classList.toggle('on', newsMode);
+    $('srcLive').classList.toggle('on', liveMode);
     $('icoPlay').hidden = playing;
     $('icoPause').hidden = !playing;
     $('playWord').textContent = playing ? 'Pause' : 'Écouter';
@@ -772,6 +814,11 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     document.body.classList.toggle('playing', playing);
 
     if (!has) { $('label').textContent = 'Rien à écouter pour le moment'; $('title').textContent = ''; return; }
+    if (liveMode) {
+      $('label').textContent = playing ? 'En direct' : 'Info en continu · appuyez pour écouter';
+      $('title').textContent = 'franceinfo, l\'info en continu';
+      return;
+    }
     if (newsMode) {
       $('label').textContent = playing ? 'Les infos du jour' : 'Les infos du jour · appuyez pour écouter';
       $('title').textContent = newsName;
@@ -782,6 +829,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   }
 
   function showTime() {
+    if (liveMode) { $('tCur').textContent = ''; $('tDur').textContent = 'Direct'; $('seek').value = 1000; return; }
     var d = duration();
     $('tCur').textContent = fmtTime(audio.currentTime || pendingSeek);
     $('tDur').textContent = fmtTime(d);
@@ -837,8 +885,10 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     newsBusy = true;
     $('srcNews').classList.add('busy');
     saveState();
-    await wakePlayer();
+    var fromLive = liveMode;
+    if (!fromLive) await wakePlayer();
     pause();
+    liveMode = false;
     $('label').textContent = 'Je cherche les infos du jour…';
     $('title').textContent = '';
     try {
@@ -874,10 +924,11 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       newsMode = true;
       newsName = have.name;
       newsSrc = have.src;
-      setSource(blob, from);
+      setSource(blob, from, 'news');
       render(); showTime();
       try { await audio.play(); } catch (e3) { render(); }   // si l'iPad refuse, le gros bouton Écouter lance les infos
     } catch (e) {
+      if (fromLive) await backToList(false);   // le direct est arrêté : on revient aux émissions
       $('label').textContent = 'Pas d\'infos pour le moment : vérifiez internet';
       $('title').textContent = '';
       setTimeout(function () { if (audio.paused) render(); }, 6000);
@@ -890,14 +941,28 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   // Revenir aux émissions préenregistrées : elles reprennent là où on les avait laissées.
   async function playList() {
     unlockAudioGraph();
+    if (liveMode) { liveMode = false; await backToList(true); return; }
     if (newsMode) { saveState(); await backToList(true); return; }
     if (audio.paused) { sayHello(); play(); }
   }
 
+  // L'info en continu : un toucher lance le direct de franceinfo ; les autres sources gardent leur position.
+  async function playLive() {
+    unlockAudioGraph();
+    if (liveMode) { if (audio.paused) play(); return; }
+    saveState();                  // garde la position des émissions ou des infos du jour
+    pause();
+    newsMode = false;
+    liveMode = true;
+    render(); showTime();
+    play();
+  }
+
   $('srcList').addEventListener('click', playList);
+  $('srcLive').addEventListener('click', playLive);
   $('srcNews').addEventListener('click', playNews);
   $('srcSpot').addEventListener('click', openSpot);
-  ['srcList', 'srcNews', 'srcSpot'].forEach(function (id) { pressable($(id)); });
+  ['srcList', 'srcNews', 'srcLive', 'srcSpot'].forEach(function (id) { pressable($(id)); });
 
   // iPhone et iPad : changer la position dès « loadedmetadata » fait démarrer à 0 et fige le curseur
   // (bug WebKit 261512). On attend que le son soit vraiment prêt (« loadeddata ») pour reprendre où on en était.
@@ -916,10 +981,12 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   audio.addEventListener('playing', function () { errorsInRow = 0; });
   audio.addEventListener('pause', function () { pausedAt = Date.now(); render(); saveState(); keepAwake(false); });
   audio.addEventListener('ended', async function () {
+    if (liveMode) { play(); return; }                  // le flux s'est coupé : on le relance
     if (newsMode) { prefs.set('radio-news', { src: newsSrc, t: 0 }); await backToList(true); return; }   // infos finies : la prochaine fois, depuis le début
     await loadTrack(idx + 1, 0); audio.play().catch(function () {});
   });
   audio.addEventListener('error', async function () {
+    if (liveMode) { $('label').textContent = 'Le direct ne répond pas : vérifiez internet'; return; }
     if (newsMode) { await backToList(false); return; }
     // Un fichier illisible : on passe au suivant, sans tourner en rond.
     if (!hasSource() || tracks.length < 2 || ++errorsInRow >= tracks.length) return;
@@ -1539,7 +1606,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   /* =====================================================================
      Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
      ===================================================================== */
-  var APP_VERSION = '2026-10-18m';   // à changer à chaque envoi sur GitHub
+  var APP_VERSION = '2026-10-18p';   // à changer à chaque envoi sur GitHub
   $('ver').textContent = APP_VERSION;
 
   async function checkUpdate() {
