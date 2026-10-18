@@ -170,6 +170,22 @@ body.playing #play { background: var(--btn-on); color: var(--btn-on-ink); }
 .spot-btn svg { width: 6.4vmin; height: 6.4vmin; -webkit-flex: none; flex: none; }
 body.in-spot .spot-btn, body.in-spot .lock { display: none; }
 
+/* ---------- Bouton Infos (en haut à gauche) ---------- */
+.news-btn {
+  position: absolute; z-index: 12;
+  top: calc(3vmin + env(safe-area-inset-top, 0px)); left: calc(4vmin + env(safe-area-inset-left, 0px));
+  height: 11vmin; padding: 0 3vmin 0 2.4vmin; border-radius: 5.5vmin;
+  border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
+  -webkit-transition: -webkit-transform .08s, background-color .4s, color .4s; transition: transform .08s, background-color .4s, color .4s;
+}
+.news-btn svg { width: 6.4vmin; height: 6.4vmin; -webkit-flex: none; flex: none; }
+.news-btn .word { font-size: 4vmin; font-weight: 700; margin-left: 1.6vmin; }
+.news-btn.on { background: var(--btn-on); color: var(--btn-on-ink); border-color: var(--btn-on); }
+.news-btn.busy { -webkit-animation: breathe 1.2s ease-in-out infinite; animation: breathe 1.2s ease-in-out infinite; }
+@-webkit-keyframes breathe { 50% { opacity: .45; } }
+@keyframes breathe { 50% { opacity: .45; } }
+body.in-spot .news-btn { display: none; }
+
 /* ---------- Écran Spotify ---------- */
 .spot {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9; background: var(--bg);
@@ -272,6 +288,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 
 @media (prefers-reduced-motion: reduce) {
   body, .round, .hello, #dim, .sheet, .knob svg { -webkit-transition: none !important; transition: none !important; }
+  .news-btn.busy { -webkit-animation: none; animation: none; opacity: .6; }
 }
 </style>
 </head>
@@ -291,6 +308,16 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       <path class="shut" d="M38 46 V36 a12 12 0 0 1 24 0 V46" fill="none" stroke="currentColor" stroke-width="6"/>
       <path class="shut-open" d="M38 46 V30 a12 12 0 0 1 24 0 V33" fill="none" stroke="currentColor" stroke-width="6"/>
     </svg>
+  </button>
+
+  <button class="news-btn flex-center" id="newsBtn" type="button" aria-label="Écouter les infos">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <rect x="12" y="20" width="62" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="7"/>
+      <path d="M74 36 H86 V74 a8 8 0 0 1 -16 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
+      <rect x="24" y="32" width="38" height="12" rx="2" fill="currentColor"/>
+      <path d="M24 56 H62 M24 68 H50" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+    <span class="word">Infos</span>
   </button>
 
   <button class="spot-btn flex-center" id="spotBtn" type="button" aria-label="Spotify">
@@ -561,8 +588,13 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   }
   async function readAllMeta() {
     var all = await request(db.transaction(META, 'readonly').objectStore(META).getAll());
+    all = all.filter(function (m) { return !m.news; });   // le journal du jour vit à part
     all.sort(function (a, b) { return (a.order || a.id) - (b.order || b.id); });
     return all;
+  }
+  async function readNewsMeta() {
+    var all = await request(db.transaction(META, 'readonly').objectStore(META).getAll());
+    return all.filter(function (m) { return m.news; });
   }
   async function readAudio(id) {
     var v = await request(db.transaction(DATA, 'readonly').objectStore(DATA).get(id));
@@ -609,12 +641,14 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
      Lecteur
      ===================================================================== */
   var tracks = [], idx = 0, objectUrl = null, pendingSeek = 0, seeking = false, apNote = false, errorsInRow = 0;
+  var newsMode = false, newsName = '';   // le journal du jour se joue par-dessus la liste, sans la toucher
 
   function current() { return tracks[idx] || null; }
   function hasSource() { return !!audio.getAttribute('src'); }
   function duration() { return audio.duration && isFinite(audio.duration) ? audio.duration : 0; }
 
   function saveState() {
+    if (newsMode) return;                 // la position gardée reste celle de l'épisode en cours
     var c = current();
     prefs.set('radio-state', { id: c ? c.id : null, t: audio.currentTime || pendingSeek || 0 });
   }
@@ -640,12 +674,25 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     idx = ((i % tracks.length) + tracks.length) % tracks.length;
     var blob = await readAudio(tracks[idx].id);
     if (!blob) return false;
+    newsMode = false;
+    setSource(blob, seekTo);
+    render(); showTime(); saveState();
+    return true;
+  }
+  function setSource(blob, seekTo) {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = URL.createObjectURL(blob);
     pendingSeek = seekTo || 0;
     audio.src = objectUrl;
-    render(); showTime(); saveState();
-    return true;
+  }
+
+  // Après le journal (ou en le quittant), on retrouve l'épisode là où on l'avait laissé, 5 s avant.
+  async function backToList(autoplay) {
+    newsMode = false;
+    if (!tracks.length) { clearSource(); render(); showTime(); return; }
+    var t = savedPositionFor(current());
+    await loadTrack(idx, t > 5 ? t - 5 : 0);
+    if (autoplay) audio.play().catch(function () {});
   }
 
   // À la reprise, on recule un peu pour retrouver le fil : 5 s après une courte pause, 10 s après une longue ou à la réouverture.
@@ -653,7 +700,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   function rewindFor() { return pausedAt && Date.now() - pausedAt < 60000 ? 5 : 10; }
 
   async function play() {
-    if (!tracks.length) return;
+    if (!tracks.length && !newsMode) return;
     var back = rewindFor();
     if (!hasSource()) {
       var t = savedPositionFor(current());
@@ -668,16 +715,18 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   function pause() { audio.pause(); }
 
   async function go(step) {
-    if (!tracks.length) return;
     var wasPlaying = !audio.paused;
+    if (newsMode) { await backToList(wasPlaying); return; }   // précédent / suivant : on quitte le journal
+    if (!tracks.length) return;
     await loadTrack(idx + step, 0);
     if (wasPlaying) audio.play().catch(function () {});
   }
 
   function render() {
-    var has = tracks.length > 0, playing = !audio.paused;
+    var has = tracks.length > 0 || newsMode, playing = !audio.paused;
     $('play').disabled = !has;
-    $('prev').disabled = $('next').disabled = tracks.length < 2;
+    $('prev').disabled = $('next').disabled = newsMode ? !tracks.length : tracks.length < 2;
+    $('newsBtn').classList.toggle('on', newsMode);
     $('icoPlay').hidden = playing;
     $('icoPause').hidden = !playing;
     $('playWord').textContent = playing ? 'Pause' : 'Écouter';
@@ -685,6 +734,11 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     document.body.classList.toggle('playing', playing);
 
     if (!has) { $('label').textContent = 'Rien à écouter pour le moment'; $('title').textContent = ''; return; }
+    if (newsMode) {
+      $('label').textContent = playing ? 'Les infos' : 'Les infos · appuyez pour écouter';
+      $('title').textContent = newsName;
+      return;
+    }
     $('label').textContent = playing ? 'En écoute' : (apNote ? 'André-Pierre a ajouté un nouvel élément' : 'Appuyez pour écouter');
     $('title').textContent = pretty(current().name);
   }
@@ -703,6 +757,75 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   $('prev').addEventListener('click', function () { go(-1); });
   $('next').addEventListener('click', function () { go(1); });
 
+  /* ---------- Les infos du jour : un toucher charge le dernier journal et le lance ---------- */
+  var NEWS_FEED = 'https://feeds.audiomeans.fr/feed/8e3b8fe2-4e39-4a3a-bb69-5d0788b8dc34.xml';  // Journal de 17h, RTBF La Première
+  var newsBusy = false;
+
+  // L'iPad n'accepte de lancer un son qu'au moment du toucher : on « réveille » le lecteur tout de suite, en silence.
+  function wakePlayer() {
+    if (!hasSource()) return Promise.resolve();
+    audio.muted = true;
+    var p;
+    try { p = audio.play(); } catch (e) { p = null; }
+    return Promise.resolve(p).then(function () { audio.pause(); }, function () {}).then(function () { audio.muted = false; });
+  }
+  function newsTitle(pub) {
+    var d = new Date(pub);
+    if (isNaN(d)) return 'Le journal';
+    return 'Le journal du ' + d.toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  async function playNews() {
+    if (newsBusy || !db) return;
+    unlockAudioGraph();
+    if (newsMode) { if (audio.paused) play(); else pause(); return; }   // déjà dans le journal : simple lecture / pause
+    newsBusy = true;
+    $('newsBtn').classList.add('busy');
+    saveState();
+    await wakePlayer();
+    pause();
+    $('label').textContent = 'Je cherche les infos…';
+    $('title').textContent = '';
+    try {
+      var r = await fetch(NEWS_FEED + '?t=' + Date.now());
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var item = new DOMParser().parseFromString(await r.text(), 'text/xml').getElementsByTagName('item')[0];
+      var enc = item && item.getElementsByTagName('enclosure')[0];
+      if (!enc) throw new Error('vide');
+      var url = directUrl(enc.getAttribute('url')), name = newsTitle(textOf(item, 'pubDate'));
+
+      var olds = await readNewsMeta();
+      var have = olds.filter(function (m) { return m.src === url; })[0];
+      if (!have) {
+        $('label').textContent = 'Je télécharge les infos…';
+        var resp = await fetch(url);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var type = resp.headers.get('content-type') || 'audio/mpeg', data;
+        try { data = await resp.blob(); } catch (e2) { data = await resp.arrayBuffer(); }
+        // Le nouveau journal remplace l'ancien.
+        for (var i = 0; i < olds.length; i++) await deleteTrack(olds[i].id);
+        await saveAudio({ name: name, size: data.size || data.byteLength || 0, src: url, news: true, order: 0 }, data, type);
+        have = (await readNewsMeta())[0];
+      }
+      var blob = await readAudio(have.id);
+      if (!blob) throw new Error('lecture');
+      newsMode = true;
+      newsName = have.name;
+      setSource(blob, 0);
+      render(); showTime();
+      try { await audio.play(); } catch (e3) { render(); }   // si l'iPad refuse, le gros bouton Écouter lance le journal
+    } catch (e) {
+      $('label').textContent = 'Pas d\'infos pour le moment : vérifiez internet';
+      $('title').textContent = '';
+      setTimeout(function () { if (audio.paused) render(); }, 6000);
+    } finally {
+      newsBusy = false;
+      $('newsBtn').classList.remove('busy');
+    }
+  }
+  $('newsBtn').addEventListener('click', playNews);
+  pressable($('newsBtn'));
+
   audio.addEventListener('loadedmetadata', function () {
     if (pendingSeek && pendingSeek < duration() - 5) { try { audio.currentTime = pendingSeek; } catch (e) {} }
     pendingSeek = 0;
@@ -712,8 +835,12 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   audio.addEventListener('play', function () { apNote = false; render(); keepAwake(true); });
   audio.addEventListener('playing', function () { errorsInRow = 0; });
   audio.addEventListener('pause', function () { pausedAt = Date.now(); render(); saveState(); keepAwake(false); });
-  audio.addEventListener('ended', async function () { await loadTrack(idx + 1, 0); audio.play().catch(function () {}); });
+  audio.addEventListener('ended', async function () {
+    if (newsMode) { await backToList(true); return; }
+    await loadTrack(idx + 1, 0); audio.play().catch(function () {});
+  });
   audio.addEventListener('error', async function () {
+    if (newsMode) { await backToList(false); return; }
     // Un fichier illisible : on passe au suivant, sans tourner en rond.
     if (!hasSource() || tracks.length < 2 || ++errorsInRow >= tracks.length) return;
     await loadTrack(idx + 1, 0);
@@ -987,7 +1114,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   }
 
   async function removeOne(id) {
-    var c = current(), isCurrent = !!c && c.id === id;
+    var c = current(), isCurrent = !!c && c.id === id && !newsMode;
     if (isCurrent) clearSource();
     await deleteTrack(id);
     await afterLibraryChange(isCurrent || !c ? null : c.id);
@@ -1018,6 +1145,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   $('clearNo').addEventListener('click', function () { $('confirm').hidden = true; });
   $('clearYes').addEventListener('click', async function () {
     clearSource();
+    newsMode = false;
     await deleteAll();
     prefs.set('radio-state', null);
     idx = 0;
@@ -1339,7 +1467,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   /* =====================================================================
      Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
      ===================================================================== */
-  var APP_VERSION = '2026-10-18f';   // à changer à chaque envoi sur GitHub
+  var APP_VERSION = '2026-10-18g';   // à changer à chaque envoi sur GitHub
   $('ver').textContent = APP_VERSION;
 
   async function checkUpdate() {
