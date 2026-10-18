@@ -7,14 +7,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Radio Maman">
-<meta name="theme-color" id="themeColor" content="#221c16">
+<meta name="theme-color" id="themeColor" content="#1b201b">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <script>
   // Applique l'ambiance choisie avant l'affichage, pour éviter un flash de couleur.
-  try { var t = JSON.parse(localStorage.getItem('radio-theme') || '"ambre"'); if (t !== 'ambre') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  try { if (JSON.parse(localStorage.getItem('radio-theme') || '"sauge"') === 'ambre') document.documentElement.setAttribute('data-theme', 'ambre'); } catch (e) {}
 </script>
 <style>
 /*
@@ -23,28 +23,25 @@
   Toutes les tailles sont en vmin pour suivre l'écran de l'iPad.
 */
 
-/* ---------- Ambiances (contraste volontairement bas) ---------- */
+/* ---------- Ambiances (contraste volontairement bas) ----------
+   Sauge par défaut. Une seconde couleur, bleu acier doux (--accent2), relève quelques détails :
+   l'onde, « En écoute », la jauge de clarté, le contour de la source active, le cercle des réglages. */
 :root {
-  --bg: #221c16;  --bg-2: #2a231c;  --line: #3d3329;
-  --fg: #c8b596;  --strong: #c2ad8c; --muted: #8f7e66;
-  --btn: #b88550; --btn-ink: #5a3d22; --btn-on: #7e5c37; --btn-on-ink: #c9ad84;
-  --accent: #b98a52; --thumb: #a8916f; --ring: rgba(184,133,80,.14); --veil: rgba(34,28,22,.9);
-  --danger: #b0644f;
-  --font: "Atkinson Hyperlegible", Verdana, -apple-system, sans-serif;
-}
-html[data-theme="sauge"] {
   --bg: #1b201b;  --bg-2: #222922;  --line: #333d32;
   --fg: #b9c2aa;  --strong: #b3bd9f; --muted: #7f8a72;
   --btn: #8f9f72; --btn-ink: #333d26; --btn-on: #5d6b4a; --btn-on-ink: #c1caa8;
   --accent: #98a878; --thumb: #9aa486; --ring: rgba(143,159,114,.15); --veil: rgba(27,32,27,.9);
+  --accent2: #7f9cab; --ring2: rgba(127,156,171,.18);
   --danger: #b0705a;
+  --font: "Atkinson Hyperlegible", Verdana, -apple-system, sans-serif;
 }
-html[data-theme="ardoise"] {
-  --bg: #1a1d24;  --bg-2: #21252e;  --line: #323947;
-  --fg: #b4bccb;  --strong: #aab3c4; --muted: #7a8396;
-  --btn: #7f8fb0; --btn-ink: #283146; --btn-on: #4f5c78; --btn-on-ink: #bcc6da;
-  --accent: #8d9cc0; --thumb: #929db3; --ring: rgba(127,143,176,.15); --veil: rgba(26,29,36,.9);
-  --danger: #b56a64;
+html[data-theme="ambre"] {
+  --bg: #221c16;  --bg-2: #2a231c;  --line: #3d3329;
+  --fg: #c8b596;  --strong: #c2ad8c; --muted: #8f7e66;
+  --btn: #b88550; --btn-ink: #5a3d22; --btn-on: #7e5c37; --btn-on-ink: #c9ad84;
+  --accent: #b98a52; --thumb: #a8916f; --ring: rgba(184,133,80,.14); --veil: rgba(34,28,22,.9);
+  --accent2: #8c9aa0; --ring2: rgba(140,154,160,.16);
+  --danger: #b0644f;
 }
 
 /* ---------- Base ---------- */
@@ -143,6 +140,12 @@ body.playing #play { background: var(--btn-on); color: var(--btn-on-ink); }
 .meter i { width: .9vmin; margin: 0 .25vmin; border-radius: 2px; background: var(--line); }
 .meter i.on { background: var(--accent); }
 
+/* Touches bleutées : discrètes, elles signalent ce qui est actif. */
+#dimMeter i.on { background: var(--accent2); }
+body.playing .now .label { color: var(--accent2); }
+#seek::-webkit-slider-thumb { box-shadow: 0 0 0 .8vmin var(--ring2); }
+.panel h3 { color: var(--accent2); }
+
 /* Voile de clarté : ne bloque pas les doigts */
 #dim { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: #000; opacity: 0; pointer-events: none; -webkit-transition: opacity .3s; transition: opacity .3s; }
 
@@ -154,8 +157,23 @@ body.playing #play { background: var(--btn-on); color: var(--btn-on-ink); }
   border: 3px solid var(--line); background: var(--bg-2); color: var(--muted);
 }
 .gear svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-.gear .ring { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; }
-.gear.holding .ring { stroke-dashoffset: 0; -webkit-transition: stroke-dashoffset 3s linear; transition: stroke-dashoffset 3s linear; }
+.gear .ring { fill: none; stroke: var(--accent2); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; }
+.gear.holding .ring { stroke-dashoffset: 0; -webkit-transition: stroke-dashoffset 1.5s linear; transition: stroke-dashoffset 1.5s linear; }
+/* Le doigt cache la roue : la progression se lit aussi à sa gauche. */
+.hold-tip {
+  position: absolute; z-index: 12; pointer-events: none;
+  top: calc(3vmin + env(safe-area-inset-top, 0px)); right: calc(17vmin + env(safe-area-inset-right, 0px));
+  height: 11vmin; padding: 0 3vmin; border-radius: 5.5vmin; background: var(--bg-2); border: 3px solid var(--line);
+  color: var(--fg); font-size: 3.6vmin; font-weight: 700;
+  display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+  opacity: 0; -webkit-transition: opacity .2s; transition: opacity .2s;
+}
+.hold-tip i { display: block; width: 16vmin; height: 1.6vmin; margin-left: 2vmin; border-radius: 1vmin; background: var(--line); overflow: hidden; }
+.hold-tip b { display: block; width: 0; height: 100%; background: var(--accent2); }
+.gear.holding + .hold-tip { opacity: 1; }
+.gear.holding + .hold-tip b { width: 100%; -webkit-transition: width 1.5s linear; transition: width 1.5s linear; }
+body.in-spot .hold-tip { display: none; }
+
 body.in-spot .gear { display: none; }
 
 /* ---------- Rangée des sources : celle qui est allumée est celle qui joue ---------- */
@@ -168,14 +186,14 @@ body.in-spot .gear { display: none; }
 }
 .src svg { width: 6vmin; height: 6vmin; -webkit-flex: none; flex: none; }
 .src .word { margin-left: 1.6vmin; }
-.src.on { background: var(--btn-on); color: var(--btn-on-ink); border-color: var(--btn-on); }
+.src.on { background: var(--btn-on); color: var(--btn-on-ink); border-color: var(--accent2); }
 .src.busy { -webkit-animation: breathe 1.2s ease-in-out infinite; animation: breathe 1.2s ease-in-out infinite; }
 #srcSpot { width: 12vmin; padding: 0; }
 @-webkit-keyframes breathe { 50% { opacity: .45; } }
 @keyframes breathe { 50% { opacity: .45; } }
 
 /* ---------- Onde : bouge avec le son, pour savoir que ça joue ---------- */
-#wave { display: block; width: 36vmin; height: 5vmin; margin: 2.5vmin auto 0; }
+#wave { display: block; width: 20vmin; height: 5vmin; margin: 5vmin auto 0; }
 
 /* ---------- iPad à l'horizontale : tout doit tenir sans défiler ---------- */
 @media (orientation: landscape) {
@@ -187,7 +205,7 @@ body.in-spot .gear { display: none; }
   #play svg { width: 10vmin; height: 10vmin; }
   #play .word { font-size: 4vmin; margin-top: 1vmin; }
   .side { width: 11vmin; height: 11vmin; }
-  #wave { margin-top: 1.5vmin; height: 4vmin; }
+  #wave { margin-top: 3vmin; height: 4vmin; width: 18vmin; }
   .now .label { min-height: 4.5vmin; }
   .now .title { min-height: 6vmin; -webkit-line-clamp: 1; }
   .seek { margin-top: .5vmin; }
@@ -237,6 +255,12 @@ body.in-spot .gear { display: none; }
   padding: 24px 20px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   background: var(--bg-2); font-size: 18px; -webkit-user-select: text; user-select: text;
 }
+/* Croix toujours visible en haut à droite, même en bas de la page. */
+.panel-x {
+  position: fixed; z-index: 21; top: calc(14px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px));
+  width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--line); background: var(--bg); color: var(--fg);
+}
+.panel-x svg { display: block; width: 100%; height: 100%; }
 .panel-inner { max-width: 640px; margin: 0 auto; }
 .panel-inner > * { margin: 0 0 20px; }
 .panel h2 { font-size: 28px; }
@@ -293,7 +317,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     </div>
   </div>
 
-  <button class="gear" id="gear" type="button" aria-label="Réglages : garder le doigt appuyé 3 secondes">
+  <button class="gear" id="gear" type="button" aria-label="Réglages : garder le doigt appuyé">
     <svg viewBox="0 0 100 100" aria-hidden="true">
       <circle class="ring" cx="50" cy="50" r="45" transform="rotate(-90 50 50)"/>
       <g transform="translate(50 50)" fill="currentColor">
@@ -310,18 +334,27 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       </g>
     </svg>
   </button>
+  <div class="hold-tip" aria-hidden="true">Réglages<i><b></b></i></div>
 
   <!-- Les sources : celle qui est allumée est celle qui joue ; chacune reprend là où on l'avait laissée -->
   <div class="sources">
-    <button class="src flex-center" id="srcList" type="button">Mes émissions<br>préenregistrées</button>
-    <button class="src flex-center" id="srcNews" type="button" aria-label="Les infos">
+    <button class="src flex-center" id="srcList" type="button">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M30 30 L70 12" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+        <rect x="10" y="30" width="80" height="56" rx="10" fill="none" stroke="currentColor" stroke-width="7"/>
+        <circle cx="36" cy="58" r="13" fill="none" stroke="currentColor" stroke-width="7"/>
+        <path d="M60 48 H78 M60 60 H78 M60 72 H72" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      <span class="word">Mes émissions<br>préenregistrées</span>
+    </button>
+    <button class="src flex-center" id="srcNews" type="button" aria-label="Les infos du jour">
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <rect x="12" y="20" width="62" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="7"/>
         <path d="M74 36 H86 V74 a8 8 0 0 1 -16 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
         <rect x="24" y="32" width="38" height="12" rx="2" fill="currentColor"/>
         <path d="M24 56 H62 M24 68 H50" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
       </svg>
-      <span class="word">Infos</span>
+      <span class="word">Infos<br>du jour</span>
     </button>
     <button class="src flex-center" id="srcSpot" type="button" aria-label="Spotify">
       <svg viewBox="0 0 100 100" aria-hidden="true">
@@ -389,8 +422,11 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 </div>
 <div id="dim"></div>
 
-<!-- Réglages de la famille (doigt appuyé 3 secondes sur la roue dentée) -->
+<!-- Réglages de la famille (doigt appuyé 1,5 s sur la roue dentée) -->
 <div class="panel" id="panel" hidden>
+  <button class="panel-x" id="panelX" type="button" aria-label="Fermer les réglages">
+    <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M28 28 L72 72 M72 28 L28 72" stroke="currentColor" stroke-width="10" stroke-linecap="round"/></svg>
+  </button>
   <div class="panel-inner">
     <h2>Réglages</h2>
 
@@ -455,6 +491,12 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     </section>
 
     <section class="box">
+      <h3>Infos du jour</h3>
+      <p>Le journal que lance le bouton « Infos du jour ». Un nouveau journal remplace toujours le précédent.</p>
+      <select id="newsSel" class="pbtn"></select>
+    </section>
+
+    <section class="box">
       <h3>Couleurs de l'écran</h3>
       <div class="row" id="themeRow"></div>
     </section>
@@ -462,7 +504,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     <div class="row">
       <button class="pbtn primary" id="panelClose" type="button">Fermer les réglages</button>
     </div>
-    <p class="hint">Pour revenir ici : garder le doigt appuyé 3 secondes sur la roue dentée, en haut à droite. · Version <span id="ver"></span></p>
+    <p class="hint">Pour revenir ici : garder le doigt appuyé sur la roue dentée, en haut à droite. · Version <span id="ver"></span></p>
   </div>
 </div>
 
@@ -731,7 +773,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 
     if (!has) { $('label').textContent = 'Rien à écouter pour le moment'; $('title').textContent = ''; return; }
     if (newsMode) {
-      $('label').textContent = playing ? 'Les infos' : 'Les infos · appuyez pour écouter';
+      $('label').textContent = playing ? 'Les infos du jour' : 'Les infos du jour · appuyez pour écouter';
       $('title').textContent = newsName;
       return;
     }
@@ -754,7 +796,24 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   $('next').addEventListener('click', function () { go(1); });
 
   /* ---------- Les infos du jour : un toucher charge le dernier journal et le lance ---------- */
-  var NEWS_FEED = 'https://feeds.audiomeans.fr/feed/8e3b8fe2-4e39-4a3a-bb69-5d0788b8dc34.xml';  // Journal de 17h, RTBF La Première
+  // Sources possibles des infos du jour (choix dans les réglages). La RTBF ne publie que son journal de 17h en podcast.
+  var NEWS_FEEDS = [
+    { id: 'inter8',  name: 'Journal de 8h · France Inter · 20 min, tous les jours', url: 'https://radiofrance-podcast.net/podcast09/podcast_72410411-a76f-4c36-99f5-3918fbc24bb8.xml' },
+    { id: 'inter13', name: 'Journal de 13h · France Inter · 30 min, en semaine',   url: 'https://radiofrance-podcast.net/podcast09/podcast_f490f94f-06ed-42e3-8060-a7fc909e87a8.xml' },
+    { id: 'rtbf17',  name: 'Journal de 17h · RTBF La Première · 8 min, en semaine', url: 'https://feeds.audiomeans.fr/feed/8e3b8fe2-4e39-4a3a-bb69-5d0788b8dc34.xml' },
+    { id: 'brief',   name: 'Le Brief · L\'Echo (Belgique, plutôt économie) · 15 min, en semaine', url: 'https://www.omnycontent.com/d/playlist/5978613f-cd11-4352-8f26-adb900fa9a58/2dc7603c-2ca9-4b9f-9381-ae1d00e127c0/b4939ad3-1b1f-4800-93e6-ae1d00e2784d/podcast.rss' }
+  ];
+  function newsFeed() {
+    var id = prefs.get('radio-news-feed', 'inter8');
+    return (NEWS_FEEDS.filter(function (f) { return f.id === id; })[0] || NEWS_FEEDS[0]).url;
+  }
+  NEWS_FEEDS.forEach(function (f) {
+    var o = document.createElement('option');
+    o.value = f.id; o.textContent = f.name;
+    $('newsSel').appendChild(o);
+  });
+  $('newsSel').value = prefs.get('radio-news-feed', 'inter8');
+  $('newsSel').addEventListener('change', function () { prefs.set('radio-news-feed', $('newsSel').value); });
   var newsBusy = false;
 
   // L'iPad n'accepte de lancer un son qu'au moment du toucher : on « réveille » le lecteur tout de suite, en silence.
@@ -780,12 +839,12 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     saveState();
     await wakePlayer();
     pause();
-    $('label').textContent = 'Je cherche les infos…';
+    $('label').textContent = 'Je cherche les infos du jour…';
     $('title').textContent = '';
     try {
       var olds = await readNewsMeta(), have = null;
       try {
-        var r = await fetch(NEWS_FEED + '?t=' + Date.now());
+        var r = await fetch(newsFeed() + '?t=' + Date.now());
         if (!r.ok) throw new Error('HTTP ' + r.status);
         var item = new DOMParser().parseFromString(await r.text(), 'text/xml').getElementsByTagName('item')[0];
         var enc = item && item.getElementsByTagName('enclosure')[0];
@@ -793,7 +852,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
         var url = directUrl(enc.getAttribute('url')), name = newsTitle(textOf(item, 'pubDate'));
         have = olds.filter(function (m) { return m.src === url; })[0];
         if (!have) {
-          $('label').textContent = 'Je télécharge les infos…';
+          $('label').textContent = 'Je télécharge les infos du jour…';
           var resp = await fetch(url);
           if (!resp.ok) throw new Error('HTTP ' + resp.status);
           var type = resp.headers.get('content-type') || 'audio/mpeg', data;
@@ -983,7 +1042,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
      Onde sous le bouton : discrète, elle bouge avec le son pour qu'on sache que ça joue
      ===================================================================== */
   var wave = $('wave'), wctx = wave.getContext ? wave.getContext('2d') : null;
-  var BARS = 9, waveRaf = 0, waveColor = '', frame0 = 0;
+  var BARS = 7, waveRaf = 0, waveColor = '', frame0 = 0;
   var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function sizeWave() {
@@ -994,7 +1053,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   function drawWave(levels) {
     if (!wctx) return;
     var W = wave.width, H = wave.height, step = W / BARS, w = Math.max(2, step * 0.26);
-    if (!waveColor || frame0 % 60 === 0) waveColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b98a52';
+    if (!waveColor || frame0 % 60 === 0) waveColor = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim() || '#7f9cab';
     wctx.clearRect(0, 0, W, H);
     wctx.strokeStyle = waveColor;
     wctx.lineWidth = w;
@@ -1037,17 +1096,16 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
      Couleurs de l'écran (dans les réglages de la famille)
      ===================================================================== */
   var THEMES = [
-    { id: 'ambre',   name: 'Ambre',   swatch: '#b88550', bg: '#221c16' },
-    { id: 'sauge',   name: 'Sauge',   swatch: '#8f9f72', bg: '#1b201b' },
-    { id: 'ardoise', name: 'Ardoise', swatch: '#7f8fb0', bg: '#1a1d24' }
-  ];
-  var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(prefs.get('radio-theme', 'ambre')));
+    { id: 'sauge', name: 'Sauge', swatch: 'linear-gradient(90deg, #8f9f72 60%, #7f9cab 60%)', bg: '#1b201b' },
+    { id: 'ambre', name: 'Ambre', swatch: 'linear-gradient(90deg, #b88550 60%, #8c9aa0 60%)', bg: '#221c16' }
+  ];   // Ardoise retirée : trop éblouissante
+  var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(prefs.get('radio-theme', 'sauge')));
   var swatches = [];
 
   function applyTheme(i, save) {
     themeIdx = i;
     var t = THEMES[i];
-    if (t.id === 'ambre') document.documentElement.removeAttribute('data-theme');
+    if (t.id === 'sauge') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t.id);
     $('themeColor').setAttribute('content', t.bg);
     swatches.forEach(function (s, k) { s.classList.toggle('on', k === i); });
@@ -1065,14 +1123,16 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   applyTheme(themeIdx, false);
 
   /* =====================================================================
-     Réglages de la famille : doigt appuyé 3 s sur la roue dentée (le cercle se referme)
+     Réglages de la famille : doigt appuyé 1,5 s sur la roue dentée (le cercle se referme)
      ===================================================================== */
   var gearBtn = $('gear');
-  holdable(gearBtn, 3000,
+  holdable(gearBtn, 1500,
     function () { gearBtn.classList.add('holding'); },
     function () { gearBtn.classList.remove('holding'); openPanel(); },
     function () { gearBtn.classList.remove('holding'); });
-  $('panelClose').addEventListener('click', function () { $('panel').hidden = true; render(); });
+  function closePanel() { $('panel').hidden = true; render(); }
+  $('panelClose').addEventListener('click', closePanel);
+  $('panelX').addEventListener('click', closePanel);
 
   function openPanel() {
     $('confirm').hidden = true;
@@ -1464,7 +1524,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   /* =====================================================================
      Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
      ===================================================================== */
-  var APP_VERSION = '2026-10-18i';   // à changer à chaque envoi sur GitHub
+  var APP_VERSION = '2026-10-18k';   // à changer à chaque envoi sur GitHub
   $('ver').textContent = APP_VERSION;
 
   async function checkUpdate() {
