@@ -13,6 +13,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <script>
+  // Unité de taille : à l'horizontale, 1 % du petit côté ; en vertical, on la limite aussi par la hauteur
+  // (1/160) pour que l'écran entier tienne, bouton Écouter compris, sans rien qui se chevauche.
+  (function () {
+    function size() {
+      var w = window.innerWidth, h = window.innerHeight;
+      var u = w > h ? h / 100 : Math.min(w / 100, h / 160);
+      document.documentElement.style.setProperty('--u', u + 'px');
+    }
+    size();
+    window.addEventListener('resize', size);
+    window.addEventListener('orientationchange', function () { setTimeout(size, 200); });
+  })();
   // Applique l'ambiance choisie avant l'affichage, pour éviter un flash de couleur.
   try { var t = JSON.parse(localStorage.getItem('radio-theme') || '"nuit"'); if (t === 'foret' || t === 'sable') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -20,7 +32,7 @@
 /*
   Radio Maman
   Compatible Safari iOS 12 : pas de « gap » en flexbox, pas d'aspect-ratio, de inset ni de clamp().
-  Toutes les tailles sont en vmin pour suivre l'écran de l'iPad.
+  Toutes les tailles suivent l'unité --u (voir le script en tête), calculée selon l'écran.
 */
 
 /* ---------- Ambiances (sombres, peu éblouissantes) ----------
@@ -34,6 +46,7 @@
   --accent2: #86a6c0; --ring2: rgba(134,166,192,.18);
   --danger: #c27a64;
   --font: "Atkinson Hyperlegible", Verdana, -apple-system, sans-serif;
+  --u: 1vmin;   /* remplacée au chargement, voir le script en tête */
 }
 html[data-theme="foret"] {   /* Forêt et laiton */
   --bg: #121815;  --bg-2: #19211d;  --line: #28332d;
@@ -77,79 +90,79 @@ button:disabled { opacity: .35; cursor: default; }
   display: -webkit-flex; display: flex;
   -webkit-flex-direction: column; flex-direction: column;
   -webkit-align-items: center; align-items: center;
-  padding: calc(3vmin + env(safe-area-inset-top, 0px)) 16px calc(4vmin + env(safe-area-inset-bottom, 0px));
+  padding: calc(calc(3 * var(--u)) + env(safe-area-inset-top, 0px)) 16px calc(calc(4 * var(--u)) + env(safe-area-inset-bottom, 0px));
 }
 
 .clock { text-align: center; cursor: default; }
-.clock .time { font-size: 13vmin; font-weight: 700; line-height: 1; color: var(--strong); }
+.clock .time { font-size: calc(13 * var(--u)); font-weight: 700; line-height: 1; color: var(--strong); }
 /* Le petit mot doux prend la place de la date quelques secondes, sans ajouter de ligne. */
-.clock .sub { position: relative; height: 5.6vmin; margin-top: 1.2vmin; }
+.clock .sub { position: relative; height: calc(5.6 * var(--u)); margin-top: calc(1.2 * var(--u)); }
 .clock .date, .hello { position: absolute; left: 50%; top: 0; white-space: nowrap; -webkit-transform: translateX(-50%); transform: translateX(-50%); -webkit-transition: opacity .8s; transition: opacity .8s; }
-.clock .date { font-size: 4.4vmin; color: var(--muted); text-transform: capitalize; }
-.hello { font-size: 4.2vmin; font-weight: 700; color: var(--accent); opacity: 0; }
+.clock .date { font-size: calc(4.4 * var(--u)); color: var(--muted); text-transform: capitalize; }
+.hello { font-size: calc(4.2 * var(--u)); font-weight: 700; color: var(--accent); opacity: 0; }
 .hello.show { opacity: 1; }
 .hello.show + .date { opacity: 0; }
 
 .center { -webkit-flex: 1; flex: 1; -webkit-flex-direction: column; flex-direction: column; }
-.deck > * { margin: 0 3vmin; }
+.deck > * { margin: 0 calc(3 * var(--u)); }
 
 .round {
   border-radius: 50%;
   -webkit-transition: -webkit-transform .08s, background-color .4s, color .4s;
   transition: transform .08s, background-color .4s, color .4s;
 }
-.side { width: 14vmin; height: 14vmin; border: 3px solid var(--line); background: var(--bg-2); color: var(--fg); }
-.side svg { width: 6.5vmin; height: 6.5vmin; }
+.side { width: calc(14 * var(--u)); height: calc(14 * var(--u)); border: 3px solid var(--line); background: var(--bg-2); color: var(--fg); }
+.side svg { width: calc(6.5 * var(--u)); height: calc(6.5 * var(--u)); }
 
 #play {
-  width: 38vmin; height: 38vmin; border: 0;
+  width: calc(38 * var(--u)); height: calc(38 * var(--u)); border: 0;
   background: var(--btn); color: var(--btn-ink);
   -webkit-flex-direction: column; flex-direction: column;
-  box-shadow: 0 0 0 1.6vmin var(--ring);
+  box-shadow: 0 0 0 calc(1.6 * var(--u)) var(--ring);
 }
-#play svg { width: 14vmin; height: 14vmin; }
-#play .word { font-size: 5vmin; font-weight: 700; margin-top: 1.4vmin; }
+#play svg { width: calc(14 * var(--u)); height: calc(14 * var(--u)); }
+#play .word { font-size: calc(5 * var(--u)); font-weight: 700; margin-top: calc(1.4 * var(--u)); }
 body.playing #play { background: var(--btn-on); color: var(--btn-on-ink); }
 .ico { display: block; line-height: 0; }
 
 /* Réaction immédiate au toucher */
 .pressed { -webkit-transform: scale(.93); transform: scale(.93); -webkit-filter: brightness(1.12); filter: brightness(1.12); }
 
-.now { text-align: center; width: 100%; max-width: 90vmin; }
-.now .label { font-size: 4vmin; color: var(--muted); min-height: 5vmin; }
+.now { text-align: center; width: 100%; max-width: calc(90 * var(--u)); }
+.now .label { font-size: calc(4 * var(--u)); color: var(--muted); min-height: calc(5 * var(--u)); }
 .now .title {
-  font-size: 4.8vmin; font-weight: 700; color: var(--strong);
-  margin-top: 1vmin; min-height: 12vmin; word-wrap: break-word;
+  font-size: calc(4.8 * var(--u)); font-weight: 700; color: var(--strong);
+  margin-top: calc(1 * var(--u)); min-height: calc(12 * var(--u)); word-wrap: break-word;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-.seek { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; width: 84vmin; max-width: 100%; margin: 2vmin auto 0; }
-.seek .tm { width: 12vmin; font-size: 3.2vmin; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
-#seek { -webkit-flex: 1; flex: 1; height: 7vmin; margin: 0 1vmin; background: transparent; -webkit-appearance: none; appearance: none; }
-#seek::-webkit-slider-runnable-track { height: 1.4vmin; border-radius: 1vmin; background: var(--line); }
+.seek { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; width: calc(84 * var(--u)); max-width: 100%; margin: calc(2 * var(--u)) auto 0; }
+.seek .tm { width: calc(12 * var(--u)); font-size: calc(3.2 * var(--u)); color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+#seek { -webkit-flex: 1; flex: 1; height: calc(7 * var(--u)); margin: 0 calc(1 * var(--u)); background: transparent; -webkit-appearance: none; appearance: none; }
+#seek::-webkit-slider-runnable-track { height: calc(1.4 * var(--u)); border-radius: calc(1 * var(--u)); background: var(--line); }
 #seek::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 6vmin; height: 6vmin; margin-top: -2.3vmin;
-  border-radius: 50%; background: var(--thumb); box-shadow: 0 0 0 .8vmin var(--ring);
+  -webkit-appearance: none; width: calc(6 * var(--u)); height: calc(6 * var(--u)); margin-top: calc(-2.3 * var(--u));
+  border-radius: 50%; background: var(--thumb); box-shadow: 0 0 0 calc(.8 * var(--u)) var(--ring);
 }
 
-.controls { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: center; justify-content: center; margin-top: 3vmin; }
-.group { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin: 1vmin 2vmin; }
-.group > * { margin: 0 1.2vmin; }
-.group .name { font-size: 3.4vmin; color: var(--muted); text-align: center; margin-bottom: 1vmin; }
+.controls { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: center; justify-content: center; margin-top: calc(3 * var(--u)); }
+.group { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin: calc(1 * var(--u)) calc(2 * var(--u)); }
+.group > * { margin: 0 calc(1.2 * var(--u)); }
+.group .name { font-size: calc(3.4 * var(--u)); color: var(--muted); text-align: center; margin-bottom: calc(1 * var(--u)); }
 .ctl {
-  width: 10.5vmin; height: 10.5vmin; border-radius: 2.4vmin;
+  width: calc(10.5 * var(--u)); height: calc(10.5 * var(--u)); border-radius: calc(2.4 * var(--u));
   border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
-  font-size: 6vmin; font-weight: 700; line-height: 1;
+  font-size: calc(6 * var(--u)); font-weight: 700; line-height: 1;
   -webkit-transition: -webkit-transform .08s; transition: transform .08s;
 }
-.meter { height: 4vmin; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; -webkit-justify-content: center; justify-content: center; }
-.meter i { width: .9vmin; margin: 0 .25vmin; border-radius: 2px; background: var(--line); }
+.meter { height: calc(4 * var(--u)); display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; -webkit-justify-content: center; justify-content: center; }
+.meter i { width: calc(.9 * var(--u)); margin: 0 calc(.25 * var(--u)); border-radius: 2px; background: var(--line); }
 .meter i.on { background: var(--accent); }
 
 /* Touches bleutées : discrètes, elles signalent ce qui est actif. */
 #dimMeter i.on { background: var(--accent2); }
 body.playing .now .label { color: var(--accent2); }
-#seek::-webkit-slider-thumb { box-shadow: 0 0 0 .8vmin var(--ring2); }
+#seek::-webkit-slider-thumb { box-shadow: 0 0 0 calc(.8 * var(--u)) var(--ring2); }
 .panel h3 { color: var(--accent2); }
 
 /* Voile de clarté : ne bloque pas les doigts */
@@ -158,8 +171,8 @@ body.playing .now .label { color: var(--accent2); }
 /* ---------- Roue dentée : doigt appuyé 3 s, le cercle se referme, les réglages s'ouvrent ---------- */
 .gear {
   position: absolute; z-index: 12;
-  top: calc(3vmin + env(safe-area-inset-top, 0px)); right: calc(4vmin + env(safe-area-inset-right, 0px));
-  width: 11vmin; height: 11vmin; border-radius: 50%;
+  top: calc(calc(3 * var(--u)) + env(safe-area-inset-top, 0px)); right: calc(calc(4 * var(--u)) + env(safe-area-inset-right, 0px));
+  width: calc(11 * var(--u)); height: calc(11 * var(--u)); border-radius: 50%;
   border: 3px solid var(--line); background: var(--bg-2); color: var(--muted);
 }
 .gear svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
@@ -172,53 +185,53 @@ body.in-spot .gear { display: none; }
 /* Une grille à largeur fixe : les deux lignes ont les mêmes bords, à gauche comme à droite.
    Ligne 1, à écouter : Mes émissions (la source principale, plus grande) et Spotify.
    Ligne 2, actualité : Infos du jour et Info en continu, à parts égales. */
-.sources { width: 84vmin; max-width: 100%; margin: 3.5vmin auto 0; }
+.sources { width: calc(84 * var(--u)); max-width: 100%; margin: calc(3.5 * var(--u)) auto 0; }
 .sgrp { display: -webkit-flex; display: flex; }
-.sgrp + .sgrp { margin-top: 2vmin; }
+.sgrp + .sgrp { margin-top: calc(2 * var(--u)); }
 .src {
-  height: 12vmin; min-width: 0; margin: 0; padding: 0 3vmin; border-radius: 3vmin;
+  height: calc(12 * var(--u)); min-width: 0; margin: 0; padding: 0 calc(3 * var(--u)); border-radius: calc(3 * var(--u));
   border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
-  font-size: 3.6vmin; font-weight: 700; line-height: 1.2; text-align: left;
+  font-size: calc(3.6 * var(--u)); font-weight: 700; line-height: 1.2; text-align: left;
   -webkit-transition: -webkit-transform .08s, background-color .4s, color .4s; transition: transform .08s, background-color .4s, color .4s;
 }
-.sgrp .src + .src { margin-left: 2vmin; }
-.src svg { width: 6vmin; height: 6vmin; -webkit-flex: none; flex: none; }
-.src .word { margin-left: 2vmin; }
+.sgrp .src + .src { margin-left: calc(2 * var(--u)); }
+.src svg { width: calc(6 * var(--u)); height: calc(6 * var(--u)); -webkit-flex: none; flex: none; }
+.src .word { margin-left: calc(2 * var(--u)); }
 .src.on { background: var(--btn-on); color: var(--btn-on-ink); border-color: var(--accent2); }
 .src.busy { -webkit-animation: breathe 1.2s ease-in-out infinite; animation: breathe 1.2s ease-in-out infinite; }
-#srcList { -webkit-flex: 1; flex: 1; height: 15vmin; border-radius: 3.5vmin; font-size: 4.2vmin; }
-#srcList svg { width: 8vmin; height: 8vmin; }
-#srcList .word { margin-left: 2.6vmin; }
-#srcSpot { width: 15vmin; height: 15vmin; padding: 0; border-radius: 3.5vmin; }
-#srcSpot svg { width: 7vmin; height: 7vmin; }
+#srcList { -webkit-flex: 1; flex: 1; height: calc(15 * var(--u)); border-radius: calc(3.5 * var(--u)); font-size: calc(4.2 * var(--u)); }
+#srcList svg { width: calc(8 * var(--u)); height: calc(8 * var(--u)); }
+#srcList .word { margin-left: calc(2.6 * var(--u)); }
+#srcSpot { width: calc(15 * var(--u)); height: calc(15 * var(--u)); padding: 0; border-radius: calc(3.5 * var(--u)); }
+#srcSpot svg { width: calc(7 * var(--u)); height: calc(7 * var(--u)); }
 #srcNews, #srcLive { -webkit-flex: 1; flex: 1; }
 @-webkit-keyframes breathe { 50% { opacity: .45; } }
 @keyframes breathe { 50% { opacity: .45; } }
 
 /* ---------- Onde : bouge avec le son, pour savoir que ça joue ---------- */
-#wave { display: block; width: 20vmin; height: 5vmin; margin: 5vmin auto 0; }
+#wave { display: block; width: calc(20 * var(--u)); height: calc(5 * var(--u)); margin: calc(5 * var(--u)) auto 0; }
 
 /* ---------- iPad à l'horizontale : tout doit tenir sans défiler ---------- */
 @media (orientation: landscape) {
-  .clock .time { font-size: 10vmin; }
-  .sources { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; width: auto; margin-top: 2.5vmin; }
-  .sgrp + .sgrp { margin: 0 0 0 4vmin; }
-  .src, #srcNews, #srcLive { -webkit-flex: none; flex: none; height: 11vmin; padding: 0 3.2vmin; }
-  #srcList { -webkit-flex: none; flex: none; height: 11vmin; padding: 0 3.6vmin; font-size: 3.8vmin; }
-  #srcList svg { width: 6.6vmin; height: 6.6vmin; }
-  #srcSpot { width: 11vmin; height: 11vmin; padding: 0; }
-  #srcSpot svg { width: 6vmin; height: 6vmin; }
-  #play { width: 28vmin; height: 28vmin; box-shadow: 0 0 0 1.2vmin var(--ring); }
-  #play svg { width: 10vmin; height: 10vmin; }
-  #play .word { font-size: 4vmin; margin-top: 1vmin; }
-  .side { width: 11vmin; height: 11vmin; }
-  #wave { margin-top: 3vmin; height: 4vmin; width: 18vmin; }
-  .now .label { min-height: 4.5vmin; }
-  .now .title { min-height: 6vmin; -webkit-line-clamp: 1; }
-  .seek { margin-top: .5vmin; }
-  #seek { height: 6vmin; }
-  .controls { margin-top: 1vmin; }
-  .ctl { width: 9vmin; height: 9vmin; font-size: 5vmin; }
+  .clock .time { font-size: calc(10 * var(--u)); }
+  .sources { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; width: auto; margin-top: calc(2.5 * var(--u)); margin-bottom: calc(2.5 * var(--u)); }
+  .sgrp + .sgrp { margin: 0 0 0 calc(4 * var(--u)); }
+  .src, #srcNews, #srcLive { -webkit-flex: none; flex: none; height: calc(11 * var(--u)); padding: 0 calc(3.2 * var(--u)); }
+  #srcList { -webkit-flex: none; flex: none; height: calc(11 * var(--u)); padding: 0 calc(3.6 * var(--u)); font-size: calc(3.8 * var(--u)); }
+  #srcList svg { width: calc(6.6 * var(--u)); height: calc(6.6 * var(--u)); }
+  #srcSpot { width: calc(11 * var(--u)); height: calc(11 * var(--u)); padding: 0; }
+  #srcSpot svg { width: calc(6 * var(--u)); height: calc(6 * var(--u)); }
+  #play { width: calc(25 * var(--u)); height: calc(25 * var(--u)); box-shadow: 0 0 0 calc(1.2 * var(--u)) var(--ring); }
+  #play svg { width: calc(10 * var(--u)); height: calc(10 * var(--u)); }
+  #play .word { font-size: calc(4 * var(--u)); margin-top: calc(1 * var(--u)); }
+  .side { width: calc(11 * var(--u)); height: calc(11 * var(--u)); }
+  #wave { margin-top: calc(3 * var(--u)); height: calc(4 * var(--u)); width: calc(18 * var(--u)); }
+  .now .label { min-height: calc(4.5 * var(--u)); }
+  .now .title { min-height: calc(6 * var(--u)); -webkit-line-clamp: 1; }
+  .seek { margin-top: calc(.5 * var(--u)); }
+  #seek { height: calc(6 * var(--u)); }
+  .controls { margin-top: calc(1 * var(--u)); }
+  .ctl { width: calc(9 * var(--u)); height: calc(9 * var(--u)); font-size: calc(5 * var(--u)); }
 }
 
 /* ---------- Écran Spotify ---------- */
@@ -226,34 +239,34 @@ body.in-spot .gear { display: none; }
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9; background: var(--bg);
   display: -webkit-flex; display: flex;
   -webkit-flex-direction: column; flex-direction: column;
-  padding: calc(3vmin + env(safe-area-inset-top, 0px)) 16px calc(3vmin + env(safe-area-inset-bottom, 0px));
+  padding: calc(calc(3 * var(--u)) + env(safe-area-inset-top, 0px)) 16px calc(calc(3 * var(--u)) + env(safe-area-inset-bottom, 0px));
 }
 .spot-top { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-flex: none; flex: none; }
-.spot-top .big-btn { margin: 0 3vmin 0 0; }
-.spot-top .big-btn svg { width: 4.2vmin; height: 4.2vmin; margin-right: 1.4vmin; vertical-align: -0.6vmin; }
-.spot-top h2 { margin: 0; font-size: 5vmin; color: var(--muted); font-weight: 700; }
-.spot-body { -webkit-flex: 1; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin-top: 3vmin; }
+.spot-top .big-btn { margin: 0 calc(3 * var(--u)) 0 0; }
+.spot-top .big-btn svg { width: calc(4.2 * var(--u)); height: calc(4.2 * var(--u)); margin-right: calc(1.4 * var(--u)); vertical-align: calc(-0.6 * var(--u)); }
+.spot-top h2 { margin: 0; font-size: calc(5 * var(--u)); color: var(--muted); font-weight: 700; }
+.spot-body { -webkit-flex: 1; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin-top: calc(3 * var(--u)); }
 .tiles { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: center; justify-content: center; }
 .tile {
-  width: 40vmin; margin: 0 2vmin 4vmin; padding: 2vmin; border-radius: 3vmin;
+  width: calc(40 * var(--u)); margin: 0 calc(2 * var(--u)) calc(4 * var(--u)); padding: calc(2 * var(--u)); border-radius: calc(3 * var(--u));
   border: 3px solid var(--line); background: var(--bg-2); color: var(--strong); text-align: center;
   -webkit-transition: -webkit-transform .08s; transition: transform .08s;
 }
-.tile .cover { display: block; width: 100%; height: 34vmin; border-radius: 2vmin; background: var(--line) center / cover no-repeat; }
-.tile .tt { display: block; margin-top: 1.6vmin; font-size: 4vmin; font-weight: 700; line-height: 1.2; word-wrap: break-word; }
-.spot-empty { text-align: center; font-size: 4.6vmin; color: var(--muted); margin-top: 12vmin; line-height: 1.5; }
+.tile .cover { display: block; width: 100%; height: calc(34 * var(--u)); border-radius: calc(2 * var(--u)); background: var(--line) center / cover no-repeat; }
+.tile .tt { display: block; margin-top: calc(1.6 * var(--u)); font-size: calc(4 * var(--u)); font-weight: 700; line-height: 1.2; word-wrap: break-word; }
+.spot-empty { text-align: center; font-size: calc(4.6 * var(--u)); color: var(--muted); margin-top: calc(12 * var(--u)); line-height: 1.5; }
 .spot-frame { display: block; width: 100%; height: 152px; border: 0; border-radius: 12px; }
 /* Lecteur compact de Spotify (152 px) : la pochette reste petite et le bouton lecture toujours visible.
    Sur l'iPad, il est agrandi d'une fois et demie : boutons plus faciles à toucher. */
 @media (min-width: 700px) and (min-height: 600px) {
   .spot-frame { width: 66.66%; -webkit-transform: scale(1.5); transform: scale(1.5); -webkit-transform-origin: 0 0; transform-origin: 0 0; }
 }
-.spot-hint { -webkit-flex: none; flex: none; text-align: center; font-size: 3.4vmin; color: var(--muted); margin-top: 2vmin; }
+.spot-hint { -webkit-flex: none; flex: none; text-align: center; font-size: calc(3.4 * var(--u)); color: var(--muted); margin-top: calc(2 * var(--u)); }
 
 .big-btn {
-  margin-top: 5vmin; padding: 2.2vmin 7vmin; border-radius: 3vmin;
+  margin-top: calc(5 * var(--u)); padding: calc(2.2 * var(--u)) calc(7 * var(--u)); border-radius: calc(3 * var(--u));
   border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
-  font-size: 4.2vmin; font-weight: 700;
+  font-size: calc(4.2 * var(--u)); font-weight: 700;
 }
 
 /* ---------- Réglages de la famille ---------- */
@@ -418,11 +431,6 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   </div>
 
   <div class="controls">
-    <div class="group" role="group" aria-label="Volume">
-      <button class="ctl flex-center" id="volDown" type="button" aria-label="Moins fort">−</button>
-      <div><div class="name">Volume</div><div class="meter" id="volMeter"></div></div>
-      <button class="ctl flex-center" id="volUp" type="button" aria-label="Plus fort">+</button>
-    </div>
     <div class="group" role="group" aria-label="Clarté de l'écran">
       <button class="ctl flex-center" id="dimDown" type="button" aria-label="Plus sombre">−</button>
       <div><div class="name">Clarté</div><div class="meter" id="dimMeter"></div></div>
@@ -461,15 +469,22 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       <p>Choisissez une émission, cochez les épisodes, puis téléchargez-les. Ils restent sur l'iPad et s'écoutent sans internet.</p>
       <div class="row">
         <select id="feedSel" class="pbtn">
-          <optgroup label="Histoire">
-            <option value="https://radiofrance-podcast.net/podcast09/rss_14435.xml">Le Fil de l'histoire (France Inter)</option>
-            <option value="https://radiofrance-podcast.net/podcast09/rss_10076.xml">Le Cours de l'histoire (France Culture)</option>
+          <optgroup label="Biographies">
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_ea05ed5f-6d44-44a6-be78-632fa1d1679d.xml">Toute une vie · 1 h, une vie racontée</option>
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_21964aef-608c-48a2-84f1-d3c6039f279a.xml">Grandes traversées · séries sur un personnage</option>
+            <option value="https://feeds.audiomeans.fr/feed/6fb5b06a-59ac-473f-a5a7-e4ed3b568346.xml">Un jour dans l'histoire · RTBF, portraits</option>
           </optgroup>
-          <optgroup label="Philosophie et réflexion">
-            <option value="https://radiofrance-podcast.net/podcast09/podcast_ab366421-dded-4be6-ae28-38a10cdcf2b6.xml">Sous le soleil de Platon · Charles Pépin, 50 min (France Inter)</option>
-            <option value="https://radiofrance-podcast.net/podcast09/podcast_47eac17e-0865-44e1-971b-1ad17271d21b.xml">Le Pourquoi du comment : philo · 3 min (France Culture)</option>
-            <option value="https://feeds.audiomeans.fr/feed/6ddf3fc9-50da-4731-98b7-3461d97873ef.xml">Kant à vous ! · 5 min (RTBF)</option>
-            <option value="https://radiofrance-podcast.net/podcast09/podcast_b073d78c-d0d6-4910-b2e1-f9b370158a12.xml">Avec philosophie · 1 h (France Culture)</option>
+          <optgroup label="Comprendre le monde">
+            <option value="https://feeds.audiomeans.fr/feed/0275dc58-b9bd-4407-9694-c0526febc69c.xml">Dans quel monde on vit · RTBF</option>
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_481f078d-4810-11e5-9fe0-005056a87c89.xml">Les Enjeux internationaux · 11 min, un pays par jour</option>
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_8f2d1e07-aaf1-4935-96d2-4307f470baec.xml">Cultures Monde · 1 h, un grand dossier international</option>
+          </optgroup>
+          <optgroup label="Histoire">
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_c951e8a9-6121-4400-a3ef-5f9c958d36c3.xml">Le Cours de l'histoire · France Culture</option>
+          </optgroup>
+          <optgroup label="Philosophie">
+            <option value="https://radiofrance-podcast.net/podcast09/podcast_ab366421-dded-4be6-ae28-38a10cdcf2b6.xml">Sous le soleil de Platon · Charles Pépin</option>
+            <option value="https://feeds.audiomeans.fr/feed/6ddf3fc9-50da-4731-98b7-3461d97873ef.xml">Kant à vous ! · RTBF, 5 min</option>
           </optgroup>
           <option value="autre">Autre émission (adresse du flux)…</option>
         </select>
@@ -477,6 +492,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       </div>
       <input id="feedUrl" class="field" type="url" placeholder="Coller l'adresse du flux RSS" hidden>
       <div id="feedMsg" class="note" role="status"></div>
+      <input id="epFilter" class="field" type="search" placeholder="Chercher un sujet : Moyen-Orient, Russie, XIXe siècle…" hidden>
       <div id="episodes" class="episodes"></div>
       <div class="row" id="dlRow" hidden>
         <button class="pbtn primary" id="dlSel" type="button">Télécharger les épisodes cochés</button>
@@ -849,7 +865,9 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     { id: 'inter8',  name: 'Journal de 8h · France Inter · 20 min, tous les jours', url: 'https://radiofrance-podcast.net/podcast09/podcast_72410411-a76f-4c36-99f5-3918fbc24bb8.xml' },
     { id: 'inter13', name: 'Journal de 13h · France Inter · 30 min, en semaine',   url: 'https://radiofrance-podcast.net/podcast09/podcast_f490f94f-06ed-42e3-8060-a7fc909e87a8.xml' },
     { id: 'rtbf17',  name: 'Journal de 17h · RTBF La Première · 8 min, en semaine', url: 'https://feeds.audiomeans.fr/feed/8e3b8fe2-4e39-4a3a-bb69-5d0788b8dc34.xml' },
-    { id: 'brief',   name: 'Le Brief · L\'Echo (Belgique, plutôt économie) · 15 min, en semaine', url: 'https://www.omnycontent.com/d/playlist/5978613f-cd11-4352-8f26-adb900fa9a58/2dc7603c-2ca9-4b9f-9381-ae1d00e127c0/b4939ad3-1b1f-4800-93e6-ae1d00e2784d/podcast.rss' }
+    { id: 'brief',   name: 'Le Brief · L\'Echo (Belgique, plutôt économie) · 15 min, en semaine', url: 'https://www.omnycontent.com/d/playlist/5978613f-cd11-4352-8f26-adb900fa9a58/2dc7603c-2ca9-4b9f-9381-ae1d00e127c0/b4939ad3-1b1f-4800-93e6-ae1d00e2784d/podcast.rss' },
+    { id: 'apropos', name: 'Analyse · À propos, Le Soir : l\'actualité belge décryptée', url: 'https://api.octopus.saooti.com/rss/emission/914.rss' },
+    { id: 'monde',   name: 'Analyse · Un jour dans le monde, France Inter : l\'international expliqué', url: 'https://radiofrance-podcast.net/podcast09/podcast_2980a1db-3393-4b68-ba22-07523b7e87e0.xml' }
   ];
   function newsFeed() {
     var id = prefs.get('radio-news-feed', 'inter8');
@@ -899,7 +917,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
         var item = new DOMParser().parseFromString(await r.text(), 'text/xml').getElementsByTagName('item')[0];
         var enc = item && item.getElementsByTagName('enclosure')[0];
         if (!enc) throw new Error('vide');
-        var url = directUrl(enc.getAttribute('url')), name = newsTitle(textOf(item, 'pubDate'));
+        var url = directUrl(enc.getAttribute('url')), name = textOf(item, 'title') || newsTitle(textOf(item, 'pubDate'));   // le vrai titre annonce le sujet
         have = olds.filter(function (m) { return m.src === url; })[0];
         if (!have) {
           $('label').textContent = 'Je télécharge les infos du jour…';
@@ -1043,7 +1061,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
      ===================================================================== */
   var VOL_MAX = 10, LUM_MAX = 6;
   var levels = prefs.get('radio-reglages', {}) || {};
-  var vol = typeof levels.vol === 'number' ? levels.vol : 7;
+  var vol = VOL_MAX;   // plus de réglage à l'écran : le volume se règle avec les boutons de l'iPad
   var lum = typeof levels.lum === 'number' ? levels.lum : LUM_MAX;
   var audioCtx = null, gain = null, analyser = null, waveData = null;
 
@@ -1091,19 +1109,15 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     }
   }
   function renderLevels() {
-    drawMeter($('volMeter'), vol, VOL_MAX);
     drawMeter($('dimMeter'), lum, LUM_MAX);
-    $('volDown').disabled = vol <= 0;  $('volUp').disabled = vol >= VOL_MAX;
     $('dimDown').disabled = lum <= 1;  $('dimUp').disabled = lum >= LUM_MAX;
-    prefs.set('radio-reglages', { vol: vol, lum: lum });
+    prefs.set('radio-reglages', { lum: lum });
   }
-  $('volDown').addEventListener('click', function () { unlockAudioGraph(); vol = clamp(vol - 1, 0, VOL_MAX); applyVolume(); renderLevels(); });
-  $('volUp').addEventListener('click', function () { unlockAudioGraph(); vol = clamp(vol + 1, 0, VOL_MAX); applyVolume(); renderLevels(); });
   $('dimDown').addEventListener('click', function () { lum = clamp(lum - 1, 1, LUM_MAX); applyClarity(); renderLevels(); });
   $('dimUp').addEventListener('click', function () { lum = clamp(lum + 1, 1, LUM_MAX); applyClarity(); renderLevels(); });
   applyVolume(); applyClarity(); renderLevels();
 
-  ['play', 'prev', 'next', 'volDown', 'volUp', 'dimDown', 'dimUp'].forEach(function (id) { pressable($(id)); });
+  ['play', 'prev', 'next', 'dimDown', 'dimUp'].forEach(function (id) { pressable($(id)); });
 
   /* =====================================================================
      Onde sous le bouton : discrète, elle bouge avec le son pour qu'on sache que ça joue
@@ -1321,20 +1335,42 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     });
   }
 
+  function plain(t) { return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  $('epFilter').addEventListener('input', function () {
+    var words = plain($('epFilter').value).split(/\s+/).filter(Boolean), shown = 0;
+    Array.prototype.forEach.call(document.querySelectorAll('.ep'), function (row) {
+      var text = row.getAttribute('data-text') || '';
+      var ok = words.every(function (w) { return text.indexOf(w) >= 0; });
+      row.hidden = !ok;
+      if (ok) shown++;
+    });
+    $('feedMsg').textContent = words.length
+      ? (shown ? shown + ' épisode' + (shown > 1 ? 's' : '') + ' sur ce sujet.' : 'Aucun épisode sur ce sujet dans cette émission.')
+      : episodes.length + ' épisodes. Cochez ceux à garder.';
+  });
+
   $('loadFeed').addEventListener('click', async function () {
     var url = $('feedSel').value === 'autre' ? $('feedUrl').value.trim() : $('feedSel').value;
     if (!url) { $('feedMsg').textContent = 'Collez d\'abord l\'adresse du flux.'; return; }
     $('feedMsg').textContent = 'Chargement de la liste…';
     $('episodes').innerHTML = '';
     $('dlRow').hidden = true;
+    $('epFilter').hidden = true;
+    $('epFilter').value = '';
     try {
       var r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       var xml = new DOMParser().parseFromString(await r.text(), 'text/xml');
       episodes = Array.prototype.slice.call(xml.getElementsByTagName('item')).map(function (it) {
         var enc = it.getElementsByTagName('enclosure')[0];
-        return { title: textOf(it, 'title'), src: enc ? enc.getAttribute('url') : '', dur: shortDuration(textOf(it, 'itunes:duration')) };
-      }).filter(function (ep) { return ep.src && !/^(Retrouvez|Découvrez)/i.test(ep.title); });
+        var raw = textOf(it, 'itunes:duration'), secs = 0;
+        raw.split(':').forEach(function (x) { secs = secs * 60 + (Number(x) || 0); });
+        var desc = (textOf(it, 'description') || textOf(it, 'itunes:summary')).replace(/<[^>]+>/g, ' ');
+        return { title: textOf(it, 'title'), desc: desc, secs: secs, src: enc ? enc.getAttribute('url') : '', dur: shortDuration(raw) };
+      }).filter(function (ep) {
+        // Ni bandes-annonces ni épisodes « Découvrez… » : seulement de vraies émissions.
+        return ep.src && !/^(Retrouvez|Découvrez)/i.test(ep.title) && !(ep.secs && ep.secs < 120);
+      });
       if (!episodes.length) throw new Error('vide');
 
       var box = $('episodes');
@@ -1344,6 +1380,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
         row.className = 'ep';
         row.setAttribute('data-src', directUrl(ep.src));
         row.setAttribute('data-dur', ep.dur);
+        row.setAttribute('data-text', plain(ep.title + ' ' + ep.desc));
         cb.type = 'checkbox'; cb.value = String(i);
         t.className = 't'; t.textContent = ep.title;
         d.className = 'd';
@@ -1352,6 +1389,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       markDownloaded();
       $('feedMsg').textContent = episodes.length + ' épisodes. Cochez ceux à garder.';
       $('dlRow').hidden = false;
+      $('epFilter').hidden = false;
     } catch (e) {
       $('feedMsg').textContent = 'Impossible de charger cette émission. Vérifiez la connexion internet ou l\'adresse.';
     }
@@ -1606,7 +1644,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   /* =====================================================================
      Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
      ===================================================================== */
-  var APP_VERSION = '2026-10-18p';   // à changer à chaque envoi sur GitHub
+  var APP_VERSION = '2026-10-18s';   // à changer à chaque envoi sur GitHub
   $('ver').textContent = APP_VERSION;
 
   async function checkUpdate() {
