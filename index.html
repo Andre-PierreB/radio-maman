@@ -79,15 +79,16 @@ button:disabled { opacity: .35; cursor: default; }
 
 .clock { text-align: center; cursor: default; }
 .clock .time { font-size: 13vmin; font-weight: 700; line-height: 1; color: var(--strong); }
-.clock .date { font-size: 4.4vmin; color: var(--muted); margin-top: 1.2vmin; text-transform: capitalize; }
-.hello {
-  font-size: 4.2vmin; font-weight: 700; color: var(--accent); margin-top: 1.2vmin;
-  opacity: 0; -webkit-transition: opacity .8s; transition: opacity .8s;
-}
+/* Le petit mot doux prend la place de la date quelques secondes, sans ajouter de ligne. */
+.clock .sub { position: relative; height: 5.6vmin; margin-top: 1.2vmin; }
+.clock .date, .hello { position: absolute; left: 50%; top: 0; white-space: nowrap; -webkit-transform: translateX(-50%); transform: translateX(-50%); -webkit-transition: opacity .8s; transition: opacity .8s; }
+.clock .date { font-size: 4.4vmin; color: var(--muted); text-transform: capitalize; }
+.hello { font-size: 4.2vmin; font-weight: 700; color: var(--accent); opacity: 0; }
 .hello.show { opacity: 1; }
+.hello.show + .date { opacity: 0; }
 
-.center { -webkit-flex: 1; flex: 1; }
-.center > * { margin: 0 3vmin; }
+.center { -webkit-flex: 1; flex: 1; -webkit-flex-direction: column; flex-direction: column; }
+.deck > * { margin: 0 3vmin; }
 
 .round {
   border-radius: 50%;
@@ -145,46 +146,55 @@ body.playing #play { background: var(--btn-on); color: var(--btn-on-ink); }
 /* Voile de clarté : ne bloque pas les doigts */
 #dim { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: #000; opacity: 0; pointer-events: none; -webkit-transition: opacity .3s; transition: opacity .3s; }
 
-/* ---------- Cadenas ---------- */
-.lock {
+/* ---------- Roue dentée : doigt appuyé 3 s, le cercle se referme, les réglages s'ouvrent ---------- */
+.gear {
   position: absolute; z-index: 12;
   top: calc(3vmin + env(safe-area-inset-top, 0px)); right: calc(4vmin + env(safe-area-inset-right, 0px));
   width: 11vmin; height: 11vmin; border-radius: 50%;
-  border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
+  border: 3px solid var(--line); background: var(--bg-2); color: var(--muted);
 }
-.lock svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-.lock .ring { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; }
-.lock.holding .ring { stroke-dashoffset: 0; -webkit-transition: stroke-dashoffset 1.5s linear; transition: stroke-dashoffset 1.5s linear; }
-.lock .shut-open { display: none; }
-.lock.open .shut { display: none; }
-.lock.open .shut-open { display: inline; }
+.gear svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.gear .ring { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; }
+.gear.holding .ring { stroke-dashoffset: 0; -webkit-transition: stroke-dashoffset 3s linear; transition: stroke-dashoffset 3s linear; }
+body.in-spot .gear { display: none; }
 
-/* ---------- Bouton Spotify (à gauche du cadenas) ---------- */
-.spot-btn {
-  position: absolute; z-index: 12;
-  top: calc(3vmin + env(safe-area-inset-top, 0px)); right: calc(18vmin + env(safe-area-inset-right, 0px));
-  width: 11vmin; height: 11vmin; border-radius: 50%;
+/* ---------- Rangée des sources : celle qui est allumée est celle qui joue ---------- */
+.sources { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; margin-top: 3vmin; }
+.src {
+  height: 12vmin; min-width: 12vmin; margin: 0 1.2vmin; padding: 0 3vmin; border-radius: 3vmin;
   border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
-  -webkit-transition: -webkit-transform .08s; transition: transform .08s;
-}
-.spot-btn svg { width: 6.4vmin; height: 6.4vmin; -webkit-flex: none; flex: none; }
-body.in-spot .spot-btn, body.in-spot .lock { display: none; }
-
-/* ---------- Bouton Infos (en haut à gauche) ---------- */
-.news-btn {
-  position: absolute; z-index: 12;
-  top: calc(3vmin + env(safe-area-inset-top, 0px)); left: calc(4vmin + env(safe-area-inset-left, 0px));
-  height: 11vmin; padding: 0 3vmin 0 2.4vmin; border-radius: 5.5vmin;
-  border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
+  font-size: 3.6vmin; font-weight: 700; line-height: 1.15; text-align: center;
   -webkit-transition: -webkit-transform .08s, background-color .4s, color .4s; transition: transform .08s, background-color .4s, color .4s;
 }
-.news-btn svg { width: 6.4vmin; height: 6.4vmin; -webkit-flex: none; flex: none; }
-.news-btn .word { font-size: 4vmin; font-weight: 700; margin-left: 1.6vmin; }
-.news-btn.on { background: var(--btn-on); color: var(--btn-on-ink); border-color: var(--btn-on); }
-.news-btn.busy { -webkit-animation: breathe 1.2s ease-in-out infinite; animation: breathe 1.2s ease-in-out infinite; }
+.src svg { width: 6vmin; height: 6vmin; -webkit-flex: none; flex: none; }
+.src .word { margin-left: 1.6vmin; }
+.src.on { background: var(--btn-on); color: var(--btn-on-ink); border-color: var(--btn-on); }
+.src.busy { -webkit-animation: breathe 1.2s ease-in-out infinite; animation: breathe 1.2s ease-in-out infinite; }
+#srcSpot { width: 12vmin; padding: 0; }
 @-webkit-keyframes breathe { 50% { opacity: .45; } }
 @keyframes breathe { 50% { opacity: .45; } }
-body.in-spot .news-btn { display: none; }
+
+/* ---------- Onde : bouge avec le son, pour savoir que ça joue ---------- */
+#wave { display: block; width: 36vmin; height: 5vmin; margin: 2.5vmin auto 0; }
+
+/* ---------- iPad à l'horizontale : tout doit tenir sans défiler ---------- */
+@media (orientation: landscape) {
+  .clock .time { font-size: 10vmin; }
+  .sources { margin-top: 2vmin; }
+  .src { height: 10vmin; }
+  #srcSpot { width: 10vmin; }
+  #play { width: 28vmin; height: 28vmin; box-shadow: 0 0 0 1.2vmin var(--ring); }
+  #play svg { width: 10vmin; height: 10vmin; }
+  #play .word { font-size: 4vmin; margin-top: 1vmin; }
+  .side { width: 11vmin; height: 11vmin; }
+  #wave { margin-top: 1.5vmin; height: 4vmin; }
+  .now .label { min-height: 4.5vmin; }
+  .now .title { min-height: 6vmin; -webkit-line-clamp: 1; }
+  .seek { margin-top: .5vmin; }
+  #seek { height: 6vmin; }
+  .controls { margin-top: 1vmin; }
+  .ctl { width: 9vmin; height: 9vmin; font-size: 5vmin; }
+}
 
 /* ---------- Écran Spotify ---------- */
 .spot {
@@ -215,29 +225,6 @@ body.in-spot .news-btn { display: none; }
 }
 .spot-hint { -webkit-flex: none; flex: none; text-align: center; font-size: 3.4vmin; color: var(--muted); margin-top: 2vmin; }
 
-/* ---------- Molette des ambiances ---------- */
-.sheet {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 15; background: var(--veil);
-  -webkit-flex-direction: column; flex-direction: column;
-  opacity: 0; -webkit-transition: opacity .35s; transition: opacity .35s;
-}
-.sheet.show { opacity: 1; }
-.sheet h2 { margin: 0 0 2vmin; font-size: 4.6vmin; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
-.dial { position: relative; width: 56vmin; height: 48vmin; }
-.knob {
-  position: absolute; left: 13vmin; top: 15vmin; width: 30vmin; height: 30vmin;
-  border-radius: 50%; box-shadow: 0 1.4vmin 0 rgba(0,0,0,.25); touch-action: none;
-}
-.knob svg { display: block; width: 100%; height: 100%; -webkit-transition: -webkit-transform .45s cubic-bezier(.3,1.4,.5,1); transition: transform .45s cubic-bezier(.3,1.4,.5,1); }
-.knob.dragging svg { -webkit-transition: none; transition: none; }
-.knob .face { fill: var(--bg-2); stroke: var(--line); stroke-width: 3; }
-.knob .tick { stroke: var(--line); stroke-width: 2.5; stroke-linecap: round; }
-.knob .pointer { stroke: var(--accent); stroke-width: 7; stroke-linecap: round; }
-.knob .cap { fill: var(--line); }
-.dot { position: absolute; width: 10vmin; height: 10vmin; margin: -5vmin 0 0 -5vmin; border-radius: 50%; border: .7vmin solid transparent; }
-.dot.on { border-color: var(--strong); }
-.sheet .tname { margin-top: 2vmin; font-size: 6.4vmin; font-weight: 700; color: var(--strong); }
-.sheet .thint { margin-top: 1.2vmin; font-size: 3.4vmin; color: var(--muted); }
 .big-btn {
   margin-top: 5vmin; padding: 2.2vmin 7vmin; border-radius: 3vmin;
   border: 3px solid var(--line); background: var(--bg-2); color: var(--fg);
@@ -285,10 +272,13 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 .rm { margin-left: 10px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-size: 15px; }
 .confirm { border: 1px solid var(--danger); border-radius: 10px; padding: 16px; }
 .hint { font-size: 15px; }
+.swatch { width: 120px; padding: 12px 10px; border-radius: 12px; border: 3px solid var(--line); background: var(--bg); color: var(--fg); font-size: 17px; font-weight: 700; }
+.swatch i { display: block; height: 44px; border-radius: 8px; margin-bottom: 8px; }
+.swatch.on { border-color: var(--strong); }
 
 @media (prefers-reduced-motion: reduce) {
-  body, .round, .hello, #dim, .sheet, .knob svg { -webkit-transition: none !important; transition: none !important; }
-  .news-btn.busy { -webkit-animation: none; animation: none; opacity: .6; }
+  body, .round, .hello, .clock .date, #dim { -webkit-transition: none !important; transition: none !important; }
+  .src.busy { -webkit-animation: none; animation: none; opacity: .6; }
 }
 </style>
 </head>
@@ -297,37 +287,52 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 <div class="app">
   <div class="clock" id="clock">
     <div class="time" id="time">--:--</div>
-    <div class="date" id="date"></div>
-    <div class="hello" id="hello">Bonne écoute, maman chérie</div>
+    <div class="sub">
+      <div class="hello" id="hello">Bonne écoute, maman chérie</div>
+      <div class="date" id="date"></div>
+    </div>
   </div>
 
-  <button class="lock" id="lock" type="button" aria-label="Couleurs : garder le doigt appuyé pour déverrouiller">
+  <button class="gear" id="gear" type="button" aria-label="Réglages : garder le doigt appuyé 3 secondes">
     <svg viewBox="0 0 100 100" aria-hidden="true">
       <circle class="ring" cx="50" cy="50" r="45" transform="rotate(-90 50 50)"/>
-      <rect x="30" y="46" width="40" height="30" rx="6" fill="currentColor"/>
-      <path class="shut" d="M38 46 V36 a12 12 0 0 1 24 0 V46" fill="none" stroke="currentColor" stroke-width="6"/>
-      <path class="shut-open" d="M38 46 V30 a12 12 0 0 1 24 0 V33" fill="none" stroke="currentColor" stroke-width="6"/>
+      <g transform="translate(50 50)" fill="currentColor">
+        <rect x="-5" y="-27" width="10" height="12" rx="2"/>
+        <rect x="-5" y="-27" width="10" height="12" rx="2" transform="rotate(45)"/>
+        <rect x="-5" y="-27" width="10" height="12" rx="2" transform="rotate(90)"/>
+        <rect x="-5" y="-27" width="10" height="12" rx="2" transform="rotate(135)"/>
+        <rect x="-5" y="-27" width="10" height="12" rx="2" transform="rotate(180)"/>
+        <rect x="-5" y="-27" width="10" height="12" rx="2" transform="rotate(225)"/>
+        <rect x="-5" y="-27" width="10" height="12" rx="2" transform="rotate(270)"/>
+        <rect x="-5" y="-27" width="10" height="12" rx="2" transform="rotate(315)"/>
+        <circle r="18"/>
+        <circle r="7" fill="var(--bg-2)"/>
+      </g>
     </svg>
   </button>
 
-  <button class="news-btn flex-center" id="newsBtn" type="button" aria-label="Écouter les infos">
-    <svg viewBox="0 0 100 100" aria-hidden="true">
-      <rect x="12" y="20" width="62" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="7"/>
-      <path d="M74 36 H86 V74 a8 8 0 0 1 -16 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
-      <rect x="24" y="32" width="38" height="12" rx="2" fill="currentColor"/>
-      <path d="M24 56 H62 M24 68 H50" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-    </svg>
-    <span class="word">Infos</span>
-  </button>
-
-  <button class="spot-btn flex-center" id="spotBtn" type="button" aria-label="Spotify">
-    <svg viewBox="0 0 100 100" aria-hidden="true">
-      <circle cx="50" cy="50" r="46" fill="currentColor"/>
-      <path d="M24 38 C42 31 62 32 78 41 M28 53 C43 47 59 48 72 55 M32 67 C44 62 56 63 66 68" fill="none" stroke="var(--bg-2)" stroke-width="7" stroke-linecap="round"/>
-    </svg>
-  </button>
+  <!-- Les sources : celle qui est allumée est celle qui joue ; chacune reprend là où on l'avait laissée -->
+  <div class="sources">
+    <button class="src flex-center" id="srcList" type="button">Mes émissions<br>préenregistrées</button>
+    <button class="src flex-center" id="srcNews" type="button" aria-label="Les infos">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <rect x="12" y="20" width="62" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="7"/>
+        <path d="M74 36 H86 V74 a8 8 0 0 1 -16 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
+        <rect x="24" y="32" width="38" height="12" rx="2" fill="currentColor"/>
+        <path d="M24 56 H62 M24 68 H50" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      <span class="word">Infos</span>
+    </button>
+    <button class="src flex-center" id="srcSpot" type="button" aria-label="Spotify">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="currentColor"/>
+        <path d="M24 38 C42 31 62 32 78 41 M28 53 C43 47 59 48 72 55 M32 67 C44 62 56 63 66 68" fill="none" stroke="var(--bg-2)" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
 
   <div class="center flex-center">
+   <div class="deck flex-center">
     <button class="side round flex-center" id="prev" type="button" aria-label="Émission précédente">
       <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="16" y="20" width="12" height="60" rx="3" fill="currentColor"/><path d="M84 20 L36 50 L84 80 Z" fill="currentColor"/></svg>
     </button>
@@ -339,6 +344,8 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     <button class="side round flex-center" id="next" type="button" aria-label="Émission suivante">
       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M16 20 L64 50 L16 80 Z" fill="currentColor"/><rect x="72" y="20" width="12" height="60" rx="3" fill="currentColor"/></svg>
     </button>
+   </div>
+    <canvas id="wave" aria-hidden="true"></canvas>
   </div>
 
   <div class="now">
@@ -382,25 +389,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 </div>
 <div id="dim"></div>
 
-<!-- Molette des ambiances (derrière le cadenas) -->
-<div class="sheet flex-center" id="sheet" hidden>
-  <h2>Couleurs</h2>
-  <div class="dial" id="dial">
-    <div class="knob" id="knob" role="slider" aria-label="Ambiance de couleur">
-      <svg viewBox="0 0 100 100" id="knobSvg" aria-hidden="true">
-        <circle class="face" cx="50" cy="50" r="47"/>
-        <g id="ticks"></g>
-        <line class="pointer" x1="50" y1="46" x2="50" y2="12"/>
-        <circle class="cap" cx="50" cy="50" r="9"/>
-      </svg>
-    </div>
-  </div>
-  <div class="tname" id="tname"></div>
-  <div class="thint">Tournez la molette ou touchez une couleur</div>
-  <button class="big-btn" id="sheetClose" type="button">Fermer</button>
-</div>
-
-<!-- Réglages de la famille (doigt appuyé 3 secondes sur l'heure) -->
+<!-- Réglages de la famille (doigt appuyé 3 secondes sur la roue dentée) -->
 <div class="panel" id="panel" hidden>
   <div class="panel-inner">
     <h2>Réglages</h2>
@@ -465,10 +454,15 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       <p class="hint">À distance : les podcasts du fichier spotify.json du dépôt GitHub s'ajoutent tout seuls (marqués « GitHub »).</p>
     </section>
 
+    <section class="box">
+      <h3>Couleurs de l'écran</h3>
+      <div class="row" id="themeRow"></div>
+    </section>
+
     <div class="row">
       <button class="pbtn primary" id="panelClose" type="button">Fermer les réglages</button>
     </div>
-    <p class="hint">Pour revenir ici : garder le doigt appuyé 3 secondes sur l'heure. · Version <span id="ver"></span></p>
+    <p class="hint">Pour revenir ici : garder le doigt appuyé 3 secondes sur la roue dentée, en haut à droite. · Version <span id="ver"></span></p>
   </div>
 </div>
 
@@ -641,14 +635,15 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
      Lecteur
      ===================================================================== */
   var tracks = [], idx = 0, objectUrl = null, pendingSeek = 0, seeking = false, apNote = false, errorsInRow = 0;
-  var newsMode = false, newsName = '';   // le journal du jour se joue par-dessus la liste, sans la toucher
+  var newsMode = false, newsName = '', newsSrc = '';   // les infos se jouent à part, sans toucher à la liste
 
   function current() { return tracks[idx] || null; }
   function hasSource() { return !!audio.getAttribute('src'); }
   function duration() { return audio.duration && isFinite(audio.duration) ? audio.duration : 0; }
 
   function saveState() {
-    if (newsMode) return;                 // la position gardée reste celle de l'épisode en cours
+    // Chaque source garde sa propre position : les infos d'un côté, les émissions de l'autre.
+    if (newsMode) { prefs.set('radio-news', { src: newsSrc, t: audio.currentTime || pendingSeek || 0 }); return; }
     var c = current();
     prefs.set('radio-state', { id: c ? c.id : null, t: audio.currentTime || pendingSeek || 0 });
   }
@@ -716,7 +711,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
 
   async function go(step) {
     var wasPlaying = !audio.paused;
-    if (newsMode) { await backToList(wasPlaying); return; }   // précédent / suivant : on quitte le journal
+    if (newsMode) return;                 // précédent / suivant ne concernent que les émissions
     if (!tracks.length) return;
     await loadTrack(idx + step, 0);
     if (wasPlaying) audio.play().catch(function () {});
@@ -725,8 +720,9 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   function render() {
     var has = tracks.length > 0 || newsMode, playing = !audio.paused;
     $('play').disabled = !has;
-    $('prev').disabled = $('next').disabled = newsMode ? !tracks.length : tracks.length < 2;
-    $('newsBtn').classList.toggle('on', newsMode);
+    $('prev').disabled = $('next').disabled = newsMode || tracks.length < 2;
+    $('srcList').classList.toggle('on', !newsMode && tracks.length > 0);
+    $('srcNews').classList.toggle('on', newsMode);
     $('icoPlay').hidden = playing;
     $('icoPause').hidden = !playing;
     $('playWord').textContent = playing ? 'Pause' : 'Écouter';
@@ -778,65 +774,90 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   async function playNews() {
     if (newsBusy || !db) return;
     unlockAudioGraph();
-    if (newsMode) { if (audio.paused) play(); else pause(); return; }   // déjà dans le journal : simple lecture / pause
+    if (newsMode) { if (audio.paused) play(); return; }   // déjà dans les infos : on relance si c'était en pause
     newsBusy = true;
-    $('newsBtn').classList.add('busy');
+    $('srcNews').classList.add('busy');
     saveState();
     await wakePlayer();
     pause();
     $('label').textContent = 'Je cherche les infos…';
     $('title').textContent = '';
     try {
-      var r = await fetch(NEWS_FEED + '?t=' + Date.now());
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      var item = new DOMParser().parseFromString(await r.text(), 'text/xml').getElementsByTagName('item')[0];
-      var enc = item && item.getElementsByTagName('enclosure')[0];
-      if (!enc) throw new Error('vide');
-      var url = directUrl(enc.getAttribute('url')), name = newsTitle(textOf(item, 'pubDate'));
-
-      var olds = await readNewsMeta();
-      var have = olds.filter(function (m) { return m.src === url; })[0];
-      if (!have) {
-        $('label').textContent = 'Je télécharge les infos…';
-        var resp = await fetch(url);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        var type = resp.headers.get('content-type') || 'audio/mpeg', data;
-        try { data = await resp.blob(); } catch (e2) { data = await resp.arrayBuffer(); }
-        // Le nouveau journal remplace l'ancien.
-        for (var i = 0; i < olds.length; i++) await deleteTrack(olds[i].id);
-        await saveAudio({ name: name, size: data.size || data.byteLength || 0, src: url, news: true, order: 0 }, data, type);
-        have = (await readNewsMeta())[0];
+      var olds = await readNewsMeta(), have = null;
+      try {
+        var r = await fetch(NEWS_FEED + '?t=' + Date.now());
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var item = new DOMParser().parseFromString(await r.text(), 'text/xml').getElementsByTagName('item')[0];
+        var enc = item && item.getElementsByTagName('enclosure')[0];
+        if (!enc) throw new Error('vide');
+        var url = directUrl(enc.getAttribute('url')), name = newsTitle(textOf(item, 'pubDate'));
+        have = olds.filter(function (m) { return m.src === url; })[0];
+        if (!have) {
+          $('label').textContent = 'Je télécharge les infos…';
+          var resp = await fetch(url);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          var type = resp.headers.get('content-type') || 'audio/mpeg', data;
+          try { data = await resp.blob(); } catch (e2) { data = await resp.arrayBuffer(); }
+          // Le nouveau journal remplace l'ancien.
+          for (var i = 0; i < olds.length; i++) await deleteTrack(olds[i].id);
+          await saveAudio({ name: name, size: data.size || data.byteLength || 0, src: url, news: true, order: 0 }, data, type);
+          have = (await readNewsMeta())[0];
+        }
+      } catch (net) {
+        have = olds[0] || null;            // sans internet : le dernier journal gardé, s'il y en a un
+        if (!have) throw net;
       }
       var blob = await readAudio(have.id);
       if (!blob) throw new Error('lecture');
+      // Reprise au bon endroit si c'est le même journal qu'on écoutait (5 s avant).
+      var pos = prefs.get('radio-news', null);
+      var from = pos && pos.src === have.src && pos.t > 5 ? pos.t - 5 : 0;
       newsMode = true;
       newsName = have.name;
-      setSource(blob, 0);
+      newsSrc = have.src;
+      setSource(blob, from);
       render(); showTime();
-      try { await audio.play(); } catch (e3) { render(); }   // si l'iPad refuse, le gros bouton Écouter lance le journal
+      try { await audio.play(); } catch (e3) { render(); }   // si l'iPad refuse, le gros bouton Écouter lance les infos
     } catch (e) {
       $('label').textContent = 'Pas d\'infos pour le moment : vérifiez internet';
       $('title').textContent = '';
       setTimeout(function () { if (audio.paused) render(); }, 6000);
     } finally {
       newsBusy = false;
-      $('newsBtn').classList.remove('busy');
+      $('srcNews').classList.remove('busy');
     }
   }
-  $('newsBtn').addEventListener('click', playNews);
-  pressable($('newsBtn'));
 
-  audio.addEventListener('loadedmetadata', function () {
-    if (pendingSeek && pendingSeek < duration() - 5) { try { audio.currentTime = pendingSeek; } catch (e) {} }
+  // Revenir aux émissions préenregistrées : elles reprennent là où on les avait laissées.
+  async function playList() {
+    unlockAudioGraph();
+    if (newsMode) { saveState(); await backToList(true); return; }
+    if (audio.paused) { sayHello(); play(); }
+  }
+
+  $('srcList').addEventListener('click', playList);
+  $('srcNews').addEventListener('click', playNews);
+  $('srcSpot').addEventListener('click', openSpot);
+  ['srcList', 'srcNews', 'srcSpot'].forEach(function (id) { pressable($(id)); });
+
+  // iPhone et iPad : changer la position dès « loadedmetadata » fait démarrer à 0 et fige le curseur
+  // (bug WebKit 261512). On attend que le son soit vraiment prêt (« loadeddata ») pour reprendre où on en était.
+  function applyPendingSeek() {
+    if (!pendingSeek || audio.readyState < 2) return;
+    var t = pendingSeek;
     pendingSeek = 0;
+    if (t < duration() - 5) { try { audio.currentTime = t; } catch (e) {} }
     showTime();
-  });
+  }
+  audio.addEventListener('loadedmetadata', showTime);
+  audio.addEventListener('loadeddata', applyPendingSeek);
+  audio.addEventListener('canplay', applyPendingSeek);
   audio.addEventListener('durationchange', showTime);
   audio.addEventListener('play', function () { apNote = false; render(); keepAwake(true); });
   audio.addEventListener('playing', function () { errorsInRow = 0; });
   audio.addEventListener('pause', function () { pausedAt = Date.now(); render(); saveState(); keepAwake(false); });
   audio.addEventListener('ended', async function () {
-    if (newsMode) { await backToList(true); return; }
+    if (newsMode) { prefs.set('radio-news', { src: newsSrc, t: 0 }); await backToList(true); return; }   // infos finies : la prochaine fois, depuis le début
     await loadTrack(idx + 1, 0); audio.play().catch(function () {});
   });
   audio.addEventListener('error', async function () {
@@ -865,12 +886,16 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     if (d) $('tCur').textContent = fmtTime(d * $('seek').value / 1000);
   });
   $('seek').addEventListener('change', async function () {
-    if (!hasSource() && tracks.length) {
-      await loadTrack(idx, 0);
-      await new Promise(function (r) { audio.addEventListener('loadedmetadata', r, { once: true }); });
+    if (!hasSource() && tracks.length) await loadTrack(idx, 0);
+    if (audio.readyState < 1) {
+      // Attendre la durée (sans jamais changer la position à ce moment-là), 3 s au plus.
+      await new Promise(function (r) { audio.addEventListener('loadedmetadata', r, { once: true }); setTimeout(r, 3000); });
     }
-    var d = duration();
-    if (d) { try { audio.currentTime = d * $('seek').value / 1000; } catch (e) {} }
+    var d = duration(), t = d * $('seek').value / 1000;
+    if (d) {
+      if (audio.readyState >= 2) { try { audio.currentTime = t; } catch (e) {} }
+      else pendingSeek = t;        // appliqué dès que le son est prêt
+    }
     seeking = false;
     saveState(); showTime();
   });
@@ -894,7 +919,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   var levels = prefs.get('radio-reglages', {}) || {};
   var vol = typeof levels.vol === 'number' ? levels.vol : 7;
   var lum = typeof levels.lum === 'number' ? levels.lum : LUM_MAX;
-  var audioCtx = null, gain = null;
+  var audioCtx = null, gain = null, analyser = null, waveData = null;
 
   // Sur iPad, audio.volume est bloqué : on passe par Web Audio, démarré au premier toucher.
   function unlockAudioGraph() {
@@ -909,7 +934,20 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       gain.connect(audioCtx.destination);
       applyVolume();
       if (audioCtx.resume) audioCtx.resume().catch(function () {});
-    } catch (e) { audioCtx = null; gain = null; }
+    } catch (e) { audioCtx = null; gain = null; return; }
+    // L'onde écoute le son avant le volume : elle bouge pareil, fort ou doucement.
+    // Safari ne fait tourner un analyseur que s'il mène aux haut-parleurs : on le branche via un volume à zéro.
+    try {
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.75;
+      var sink = audioCtx.createGain();
+      sink.gain.value = 0;
+      src.connect(analyser);
+      analyser.connect(sink);
+      sink.connect(audioCtx.destination);
+      waveData = new Uint8Array(analyser.frequencyBinCount);
+    } catch (e2) { analyser = null; }
   }
   function applyVolume() {
     var v = vol / VOL_MAX;
@@ -942,16 +980,69 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   ['play', 'prev', 'next', 'volDown', 'volUp', 'dimDown', 'dimUp'].forEach(function (id) { pressable($(id)); });
 
   /* =====================================================================
-     Ambiances : cadenas + molette
+     Onde sous le bouton : discrète, elle bouge avec le son pour qu'on sache que ça joue
+     ===================================================================== */
+  var wave = $('wave'), wctx = wave.getContext ? wave.getContext('2d') : null;
+  var BARS = 9, waveRaf = 0, waveColor = '', frame0 = 0;
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function sizeWave() {
+    var r = window.devicePixelRatio || 1;
+    wave.width = Math.round(wave.clientWidth * r);
+    wave.height = Math.round(wave.clientHeight * r);
+  }
+  function drawWave(levels) {
+    if (!wctx) return;
+    var W = wave.width, H = wave.height, step = W / BARS, w = Math.max(2, step * 0.26);
+    if (!waveColor || frame0 % 60 === 0) waveColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b98a52';
+    wctx.clearRect(0, 0, W, H);
+    wctx.strokeStyle = waveColor;
+    wctx.lineWidth = w;
+    wctx.lineCap = 'round';
+    for (var i = 0; i < BARS; i++) {
+      var h = Math.max(0, levels[i] * (H - w)), x = step * i + step / 2;
+      wctx.beginPath();
+      wctx.moveTo(x, (H - h) / 2);
+      wctx.lineTo(x, (H + h) / 2 + 0.01);    // un point rond quand c'est silencieux
+      wctx.stroke();
+    }
+  }
+  function waveLevels() {
+    var out = [], mid = (BARS - 1) / 2;
+    frame0++;
+    if (calm) { for (var c = 0; c < BARS; c++) out.push(0.35); return out; }
+    if (analyser && waveData) {
+      analyser.getByteFrequencyData(waveData);
+      // Graves au centre, aigus vers les bords : une forme symétrique, plus douce à regarder.
+      for (var i = 0; i < BARS; i++) {
+        var bin = 1 + Math.round(Math.abs(i - mid) * 2);
+        out.push(Math.min(1, 1.15 * waveData[bin] / 255));
+      }
+    } else {
+      for (var j = 0; j < BARS; j++) out.push(0.25 + 0.2 * Math.sin(frame0 / 9 + j));   // sans analyseur : une respiration lente
+    }
+    return out;
+  }
+  function flatWave() { var z = []; for (var i = 0; i < BARS; i++) z.push(0); drawWave(z); }
+  function waveLoop() {
+    if (audio.paused) { waveRaf = 0; flatWave(); return; }
+    drawWave(waveLevels());
+    waveRaf = requestAnimationFrame(waveLoop);
+  }
+  audio.addEventListener('play', function () { if (!waveRaf) waveRaf = requestAnimationFrame(waveLoop); });
+  window.addEventListener('resize', function () { sizeWave(); flatWave(); });
+  sizeWave(); flatWave();
+
+  /* =====================================================================
+     Couleurs de l'écran (dans les réglages de la famille)
      ===================================================================== */
   var THEMES = [
-    { id: 'ambre',   name: 'Ambre',   swatch: '#b88550', bg: '#221c16', angle: -60 },
-    { id: 'sauge',   name: 'Sauge',   swatch: '#8f9f72', bg: '#1b201b', angle: 0 },
-    { id: 'ardoise', name: 'Ardoise', swatch: '#7f8fb0', bg: '#1a1d24', angle: 60 }
+    { id: 'ambre',   name: 'Ambre',   swatch: '#b88550', bg: '#221c16' },
+    { id: 'sauge',   name: 'Sauge',   swatch: '#8f9f72', bg: '#1b201b' },
+    { id: 'ardoise', name: 'Ardoise', swatch: '#7f8fb0', bg: '#1a1d24' }
   ];
   var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(prefs.get('radio-theme', 'ambre')));
-  var lockBtn = $('lock'), sheet = $('sheet'), knob = $('knob'), knobSvg = $('knobSvg');
-  var dots = [], sheetTimer = null;
+  var swatches = [];
 
   function applyTheme(i, save) {
     themeIdx = i;
@@ -959,121 +1050,28 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     if (t.id === 'ambre') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t.id);
     $('themeColor').setAttribute('content', t.bg);
-    dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
-    $('tname').textContent = t.name;
+    swatches.forEach(function (s, k) { s.classList.toggle('on', k === i); });
     if (save) prefs.set('radio-theme', t.id);
   }
-  function setKnob(angle) {
-    var tr = 'rotate(' + angle + 'deg)';
-    knobSvg.style.webkitTransform = tr;
-    knobSvg.style.transform = tr;
-  }
-  function nearestTheme(angle) {
-    var best = 0;
-    THEMES.forEach(function (t, i) { if (Math.abs(t.angle - angle) < Math.abs(THEMES[best].angle - angle)) best = i; });
-    return best;
-  }
-
-  // Dessin de la molette : graduations et pastilles de couleur
-  (function buildDial() {
-    var ticks = $('ticks'), ns = 'http://www.w3.org/2000/svg';
-    for (var a = 0; a < 360; a += 15) {
-      var rad = a * Math.PI / 180, l = document.createElementNS(ns, 'line');
-      l.setAttribute('class', 'tick');
-      l.setAttribute('x1', 50 + 40 * Math.sin(rad)); l.setAttribute('y1', 50 - 40 * Math.cos(rad));
-      l.setAttribute('x2', 50 + 45 * Math.sin(rad)); l.setAttribute('y2', 50 - 45 * Math.cos(rad));
-      ticks.appendChild(l);
-    }
-    // Centre de la molette à (28 ; 30) vmin dans la zone ; pastilles sur un arc de 21 vmin.
-    THEMES.forEach(function (t, i) {
-      var rad = t.angle * Math.PI / 180, d = document.createElement('button');
-      d.type = 'button';
-      d.className = 'dot';
-      d.setAttribute('aria-label', 'Ambiance ' + t.name);
-      d.style.background = t.swatch;
-      d.style.left = (28 + 21 * Math.sin(rad)) + 'vmin';
-      d.style.top = (30 - 21 * Math.cos(rad)) + 'vmin';
-      d.addEventListener('click', function () { applyTheme(i, true); setKnob(t.angle); keepSheetOpen(); });
-      $('dial').appendChild(d);
-      dots.push(d);
-    });
-  })();
-
-  function openSheet() {
-    lockBtn.classList.remove('holding');
-    lockBtn.classList.add('open');
-    sheet.hidden = false;
-    void sheet.offsetWidth;            // relance la transition
-    sheet.classList.add('show');
-    applyTheme(themeIdx, false);
-    setKnob(THEMES[themeIdx].angle);
-    keepSheetOpen();
-  }
-  function closeSheet() {
-    clearTimeout(sheetTimer);
-    sheet.classList.remove('show');
-    lockBtn.classList.remove('open');
-    setTimeout(function () { if (!sheet.classList.contains('show')) sheet.hidden = true; }, 350);
-  }
-  // Se referme tout seul après 20 secondes sans toucher.
-  function keepSheetOpen() { clearTimeout(sheetTimer); sheetTimer = setTimeout(closeSheet, 20000); }
-
-  holdable(lockBtn, 1500,
-    function () { lockBtn.classList.add('holding'); },
-    openSheet,
-    function () { lockBtn.classList.remove('holding'); });
-  $('sheetClose').addEventListener('click', closeSheet);
-  sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
-
-  // Tourner la molette au doigt ; un simple toucher passe à l'ambiance suivante.
-  var drag = null;
-  function pointOf(e) {
-    var p = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
-    return { x: p.clientX, y: p.clientY };
-  }
-  function angleOf(e) {
-    var r = knob.getBoundingClientRect(), p = pointOf(e);
-    return Math.atan2(p.x - (r.left + r.width / 2), (r.top + r.height / 2) - p.y) * 180 / Math.PI;
-  }
-  function dragStart(e) {
-    drag = { a0: angleOf(e), r0: THEMES[themeIdx].angle, r: THEMES[themeIdx].angle, moved: false };
-    knob.classList.add('dragging');
-    keepSheetOpen();
-  }
-  function dragMove(e) {
-    if (!drag) return;
-    if (e.cancelable) e.preventDefault();
-    var d = angleOf(e) - drag.a0;
-    if (d > 180) d -= 360;
-    if (d < -180) d += 360;
-    if (Math.abs(d) > 6) drag.moved = true;
-    drag.r = clamp(drag.r0 + d, -80, 80);
-    setKnob(drag.r);
-    var n = nearestTheme(drag.r);
-    if (n !== themeIdx) applyTheme(n, false);
-  }
-  function dragEnd() {
-    if (!drag) return;
-    knob.classList.remove('dragging');
-    var n = drag.moved ? nearestTheme(drag.r) : (themeIdx + 1) % THEMES.length;
-    drag = null;
-    applyTheme(n, true);
-    setKnob(THEMES[n].angle);
-    keepSheetOpen();
-  }
-  knob.addEventListener('touchstart', dragStart, { passive: true });
-  knob.addEventListener('touchmove', dragMove, { passive: false });
-  on(knob, 'touchend touchcancel', dragEnd);
-  knob.addEventListener('mousedown', dragStart);
-  window.addEventListener('mousemove', dragMove);
-  window.addEventListener('mouseup', dragEnd);
-
+  THEMES.forEach(function (t, i) {
+    var b = document.createElement('button'), c = document.createElement('i');
+    b.type = 'button'; b.className = 'swatch';
+    c.style.background = t.swatch;
+    b.appendChild(c); b.appendChild(document.createTextNode(t.name));
+    b.addEventListener('click', function () { applyTheme(i, true); });
+    $('themeRow').appendChild(b);
+    swatches.push(b);
+  });
   applyTheme(themeIdx, false);
 
   /* =====================================================================
-     Réglages de la famille
+     Réglages de la famille : doigt appuyé 3 s sur la roue dentée (le cercle se referme)
      ===================================================================== */
-  holdable($('clock'), 3000, null, openPanel, null);
+  var gearBtn = $('gear');
+  holdable(gearBtn, 3000,
+    function () { gearBtn.classList.add('holding'); },
+    function () { gearBtn.classList.remove('holding'); openPanel(); },
+    function () { gearBtn.classList.remove('holding'); });
   $('panelClose').addEventListener('click', function () { $('panel').hidden = true; render(); });
 
   function openPanel() {
@@ -1366,10 +1364,9 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     });
   }
 
-  $('spotBtn').addEventListener('click', openSpot);
   $('spotHome').addEventListener('click', closeSpot);
   $('spotBack').addEventListener('click', showTiles);
-  ['spotBtn', 'spotHome', 'spotBack'].forEach(function (id) { pressable($(id)); });
+  ['spotHome', 'spotBack'].forEach(function (id) { pressable($(id)); });
 
   /* ---------- Réglages : liste des podcasts Spotify ---------- */
   function renderSpotPanel() {
@@ -1467,12 +1464,12 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
   /* =====================================================================
      Mise à jour : en revenant sur l'appli, on recharge si une nouvelle version est en ligne
      ===================================================================== */
-  var APP_VERSION = '2026-10-18g';   // à changer à chaque envoi sur GitHub
+  var APP_VERSION = '2026-10-18i';   // à changer à chaque envoi sur GitHub
   $('ver').textContent = APP_VERSION;
 
   async function checkUpdate() {
     // Jamais pendant l'écoute ni dans un écran ouvert : maman ne doit rien voir bouger.
-    if (!audio.paused || !spot.hidden || !$('panel').hidden || !sheet.hidden) return;
+    if (!audio.paused || !spot.hidden || !$('panel').hidden) return;
     try {
       var r = await fetch('index.html?v=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) return;
