@@ -804,7 +804,7 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
     }
     try { await audio.play(); } catch (e) { $('label').textContent = 'Appuyez encore une fois'; }
   }
-  function pause() { audio.pause(); }
+  function pause() { audio.pause(); suspendGraph(); }
 
   async function go(step) {
     var wasPlaying = !audio.paused;
@@ -1092,6 +1092,20 @@ ol.tracks li.cur { color: var(--accent); font-weight: 700; }
       waveData = new Uint8Array(analyser.frequencyBinCount);
     } catch (e2) { analyser = null; }
   }
+  // Sur vieil iPad, si le circuit Web Audio tourne pendant la pause, il rejoue en boucle
+  // le dernier bout de son (saccades). On l'arrête à la pause, on le relance à la lecture.
+  function suspendGraph() {
+    if (audioCtx && audioCtx.state === 'running' && audioCtx.suspend) audioCtx.suspend().catch(function () {});
+  }
+  function resumeGraph() {
+    if (audioCtx && audioCtx.state !== 'running' && audioCtx.resume) audioCtx.resume().catch(function () {});
+  }
+  audio.addEventListener('play', resumeGraph);
+  audio.addEventListener('pause', function () {
+    // Pause venue d'ailleurs (écran verrouillé, appel…) : on attend un peu,
+    // pour ne pas couper le circuit entre deux émissions ou à un changement de piste.
+    setTimeout(function () { if (audio.paused && !audio.ended) suspendGraph(); }, 400);
+  });
   function applyVolume() {
     var v = vol / VOL_MAX;
     if (gain) gain.gain.value = v * v;
